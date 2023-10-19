@@ -22,6 +22,7 @@ void lecture(int * sockfd){
     if(c=='\n'){
       break;
     }
+    
   }
 }
 void affichage(int * sockfd, char * buffer){
@@ -82,10 +83,18 @@ int main(int argc, char** argv )
     }
   }
   
-
-  /*Affichage du menu*/
-  affichage(&sockfd, buffer);
-  lecture(&sockfd);
+  bool clientConnecte = true;
+  while(clientConnecte){
+     /*Affichage du menu*/
+    affichage(&sockfd, buffer);
+    c = getchar();
+    write(sockfd, &c, 1);
+    if(c == '4'){
+      clientConnecte = false;
+    }
+  }
+  printf("Deconnexion \n");
+ 
   
   /*  attention il s'agit d'une boucle infinie 
    *  le socket n'est jamais ferme !

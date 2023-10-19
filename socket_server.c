@@ -212,11 +212,25 @@ int main(int argc, char** argv )
 
         }
           
-         
 
-          char requestMenu[] = "--------------- Bonjour ";
-          strcat(requestMenu, strcat(j.pseudo,"---------------\n \t1: Défier un joueur \n\t2: Voir son profil \n\t3: Modifer sa biographie \n\t4: Déconnexion")) ;
+        bool joueurSurMenu = true; 
+        while(joueurSurMenu){
+          char requestMenu[200] = "--------------- Bonjour ";
+          strcat(requestMenu, j.pseudo);
+          strcat(requestMenu,"---------------\n \t1: Défier un joueur \n\t2: Voir son profil \n\t3: Modifer sa biographie \n\t4: Déconnexion\0") ;
           send(scomm, requestMenu, strlen(requestMenu), 0);
+
+          char reponse; 
+          read(scomm, &reponse, 1);
+          printf("%c\n",reponse); 
+
+          if(reponse == '4'){
+            joueurSurMenu = false;
+          }
+
+        }
+        printf("Le joueur %s s'est deconnecté\n", j.pseudo);
+          
         
 
         close(scomm);
