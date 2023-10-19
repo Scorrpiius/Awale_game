@@ -16,26 +16,74 @@
 typedef struct Joueur{
   char pseudo[100];
   bool occupe;
-  bool connecte;
+  int connecte;
   char biographie[1000];
   int nbVictoires;
   
 } Joueur;
 
-/*struct listeJoueurs {
-  Joueur joueurActuel;
-  Joueur* prochainJoueur;
-};*/
+
+void ecrireListeJoueur(Joueur j){
+  FILE* fic ;
+
+//ouverture du fic de données CSV
+    int indice = 0;
+    fic = fopen( "liste_joueurs.csv", "w") ;
+    if (fic==NULL)
+    {
+        printf("Ouverture fic impossible !");
+    }else{     
+        fseek(fic, 0, SEEK_END);
+        fprintf(fic, "%s;%d;%d;\n", j.pseudo, j.nbVictoires, j.connecte);
+    }
+    fclose(fic);
+
+} 
+
+void lireListeJoueur(){
+  FILE* fic ;
+  Joueur liste[100];
 
 
-void afficherJoueurs(Joueur liste[], int nb){
-  printf("Liste de joueurs : \n");
-  for(int i =0; i<nb ; i++){
-    printf("%s\t", liste[i].pseudo);
-    printf("Nombres de victoires : %d\t", liste[i].nbVictoires);
-    printf("Connnecté ? %d", liste[i].connecte);
-  }
-}
+//ouverture du fic de données CSV
+    int indice = 0;
+    fic = fopen( "liste_joueurs.csv", "r") ;
+    if (fic==NULL)
+    {
+        printf("Ouverture fic impossible !");
+    }else{
+      char c;
+      bool fileEnd = false;
+      while (!fileEnd) {
+            
+            Joueur j;
+            char pseudoCSV[100];
+            int index=0;
+            while((c=fgetc(fic)) != ';'){
+              pseudoCSV[index] = c;
+              index++;
+            }
+            strcpy(j.pseudo, pseudoCSV);
+
+            j.nbVictoires = fgetc(fic);
+            fgetc(fic);
+            j.connecte = fgetc(fic);
+            fgetc(fic);
+
+            printf("Joueur : %s avec %d nombres de victoires est connecte ? %d", j.pseudo, j.nbVictoires, j.connecte);
+            break;
+            if((c=fgetc(fic))== EOF){
+              fileEnd = true; 
+              break;
+            }
+
+
+            
+        }
+    }
+    fclose(fic);
+
+} 
 
 int main(int argc, char** argv )
 { 
@@ -105,16 +153,20 @@ int main(int argc, char** argv )
           
           char requestValidation [] = "Votre pseudo est : ";
           Joueur j;
-          j.connecte = true;
+          j.connecte = 1;
+          strcpy(j.biographie,"Votre biographie est vide. Allez la remplir ! ");
+          j.occupe = false;
+          j.nbVictoires = 0;
           strcpy(j.pseudo, pseudoInput);
           strcat(requestValidation, j.pseudo);
           send(scomm, requestValidation, strlen(requestValidation), 0);
 
-          //joueur créé et ajouté dans la base de donnée
-          listeJoueurs[nbJoueur] = j;
-          nbJoueur++;
 
-          afficherJoueurs(listeJoueurs, nbJoueur);
+          printf("Ajout du joueur");
+          ecrireListeJoueur(j);
+
+          printf("Lecture de la liste de joueur");
+          lireListeJoueur();
 
           close(scomm);
           exit(0); /* on force la terminaison du fils */
