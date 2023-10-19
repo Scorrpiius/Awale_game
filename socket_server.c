@@ -28,7 +28,7 @@ void ecrireListeJoueur(Joueur j){
 
 //ouverture du fic de données CSV
     int indice = 0;
-    fic = fopen( "liste_joueurs.csv", "w") ;
+    fic = fopen( "liste_joueurs.csv", "r+") ;
     if (fic==NULL)
     {
         printf("Ouverture fic impossible !");
@@ -54,31 +54,36 @@ void lireListeJoueur(){
     }else{
       char c;
       bool fileEnd = false;
+      Joueur listeJoueur[100]; 
+      int indice =0;
       while (!fileEnd) {
             
-            Joueur j;
+  
             char pseudoCSV[100];
             int index=0;
             while((c=fgetc(fic)) != ';'){
               pseudoCSV[index] = c;
               index++;
             }
-            strcpy(j.pseudo, pseudoCSV);
+            pseudoCSV[index]='\0';
+            strcpy(listeJoueur[indice].pseudo, pseudoCSV);
 
             char nbVictoiresCSV = fgetc(fic);
-            j.nbVictoires = atoi(&nbVictoiresCSV);
+            listeJoueur[indice].nbVictoires = atoi(&nbVictoiresCSV);
             fgetc(fic);
             char connecteCSV = fgetc(fic);
-            j.connecte = atoi(&connecteCSV);
+            listeJoueur[indice].connecte = atoi(&connecteCSV);
+            fgetc(fic);
             fgetc(fic);
 
-            printf("%s avec %d nombres de victoires", j.pseudo, j.nbVictoires);
-            break;
+            printf("%s avec %d nombres de victoires\n", listeJoueur[indice].pseudo, listeJoueur[indice].nbVictoires);
+
             if((c=fgetc(fic))== EOF){
               fileEnd = true; 
               break;
             }
-
+            fseek(fic, -1L, SEEK_CUR);
+            indice++;
 
             
         }
