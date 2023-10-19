@@ -32,7 +32,7 @@ void ecrireListeJoueur(Joueur j){
     if (fic==NULL)
     {
         printf("Ouverture fic impossible !");
-    }else{     
+    }else{ 
         fseek(fic, 0, SEEK_END);
         fprintf(fic, "%s;%d;%d;\n", j.pseudo, j.nbVictoires, j.connecte);
     }
@@ -65,12 +65,14 @@ void lireListeJoueur(){
             }
             strcpy(j.pseudo, pseudoCSV);
 
-            j.nbVictoires = fgetc(fic);
+            char nbVictoiresCSV = fgetc(fic);
+            j.nbVictoires = atoi(&nbVictoiresCSV);
             fgetc(fic);
-            j.connecte = fgetc(fic);
+            char connecteCSV = fgetc(fic);
+            j.connecte = atoi(&connecteCSV);
             fgetc(fic);
 
-            printf("Joueur : %s avec %d nombres de victoires est connecte ? %d", j.pseudo, j.nbVictoires, j.connecte);
+            printf("%s avec %d nombres de victoires", j.pseudo, j.nbVictoires);
             break;
             if((c=fgetc(fic))== EOF){
               fileEnd = true; 
@@ -80,7 +82,7 @@ void lireListeJoueur(){
 
             
         }
-    }
+    } 
     fclose(fic);
 
 } 
@@ -162,10 +164,9 @@ int main(int argc, char** argv )
           send(scomm, requestValidation, strlen(requestValidation), 0);
 
 
-          printf("Ajout du joueur");
+          printf("Ajout du joueur\n");
           ecrireListeJoueur(j);
 
-          printf("Lecture de la liste de joueur");
           lireListeJoueur();
 
           close(scomm);
