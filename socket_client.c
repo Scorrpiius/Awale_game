@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -29,6 +30,14 @@ void affichage(int * sockfd, char * buffer){
         buffer[i] = '\0';
         printf("%s\n", buffer);
   }
+}
+
+//lire un caractere envoyé par le serveur : 
+//0 = non valide ou erreur ; 1 = valide 
+char receptionValidite(int * sockfd){
+  char c;
+  read(*sockfd,&c,1);
+  return c;
 }
 
 int main(int argc, char** argv )
@@ -62,11 +71,17 @@ int main(int argc, char** argv )
     
   
   /* Repete dans le socket tout ce qu'il entend */
-  affichage(&sockfd, buffer);
-  lecture(&sockfd);
+  bool accepteParServeur = false;
+  while(!accepteParServeur){
+    affichage(&sockfd, buffer);
+    lecture(&sockfd);
 
-  /*Validation du serveur*/
-  affichage(&sockfd, buffer);
+    /*Validation du serveur*/
+    if(receptionValidite(&sockfd)=='1'){
+      accepteParServeur=true;
+    }
+  }
+  
 
   /*Affichage du menu*/
   affichage(&sockfd, buffer);

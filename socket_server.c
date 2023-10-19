@@ -23,6 +23,26 @@ typedef struct Joueur{
 } Joueur;
 
 Joueur listeJoueurs[200];
+int nbJoueurs;
+
+// la méthode renvoie -2 si le joueur n'existe pas;
+//l'indice du joueur dans la liste si le joueur a déjà créé son compte et n'est pas connecté ;
+// -1 si un autre joueur est connecté avec le même pseudo
+int joueurExistant(char* pseudoNouveauJoueur){
+
+    for(int i = 0; i<nbJoueurs; i++){
+      Joueur j = listeJoueurs[i];
+      if(strcmp(pseudoNouveauJoueur, j.pseudo) == 0){
+          if(j.connecte == 0){
+            return i;
+          }else{
+            return -1;
+          }
+      }
+    }
+    return -2;
+}
+
 void ecrireListeJoueur(Joueur j){
   FILE* fic ;
 
@@ -43,7 +63,7 @@ void ecrireListeJoueur(Joueur j){
 void lireListeJoueur(Joueur* listeJoueurParam){
     FILE* fic ;
 
-
+  nbJoueurs = 0;
 //ouverture du fic de données CSV
     int indice = 0;
     fic = fopen( "liste_joueurs.csv", "r") ;
@@ -73,7 +93,7 @@ void lireListeJoueur(Joueur* listeJoueurParam){
             listeJoueurParam[indice].connecte = atoi(infosJoueur);
             
 
-            printf("%s avec %d nombres de victoires\n", listeJoueurParam[indice].pseudo, listeJoueurParam[indice].nbVictoires);
+            //printf("%s avec %d nombres de victoires\n", listeJoueurParam[indice].pseudo, listeJoueurParam[indice].nbVictoires);
 
             if((c=fgetc(fic))== EOF){
               fileEnd = true; 
@@ -84,6 +104,7 @@ void lireListeJoueur(Joueur* listeJoueurParam){
 
             
         }
+        nbJoueurs = indice+1;
     } 
     fclose(fic);
 
@@ -98,7 +119,7 @@ int main(int argc, char** argv )
   struct sockaddr_in cli_addr,serv_addr;
  
   
-  int nbJoueur = 0;
+
   
 
   if (argc!=2) {printf ("usage: socket_server port\n");exit(0);}
@@ -130,9 +151,12 @@ int main(int argc, char** argv )
       pid = fork();
       if (pid == 0) /* c’est le fils */
       {
-          close(sockfd); /* socket inutile pour le fils */
-          /* traiter la communication */
+        Joueur j;
+        close(sockfd); /* socket inutile pour le fils */
+        /* traiter la communication */
 
+        bool joueurNonValide = true;
+        while(joueurNonValide){
           //demander pseudo à joueur
           char requestPseudo[] = "Veuillez entrer votre pseudo, svp.";
 
@@ -155,28 +179,48 @@ int main(int argc, char** argv )
           }
           printf("\n");
           
-          char requestValidation [] = "Votre pseudo est : ";
-          Joueur j;
-          j.connecte = 1;
-          strcpy(j.biographie,"Votre biographie est vide. Allez la remplir ! ");
-          j.occupe = false;
-          j.nbVictoires = 0;
-          strcpy(j.pseudo, pseudoInput);
-          strcat(requestValidation, j.pseudo);
-          send(scomm, requestValidation, strlen(requestValidation), 0);
-
-
-          printf("Ajout du joueur\n");
-          ecrireListeJoueur(j);
-
-          char requestMenu[] = "--------------- Menu ---------------\n \t1: Défier un joueur \n\t2: Voir son profil \n\t3: Modifer sa biographie \n\t4: Déconnexion";
-          send(scomm, requestMenu, strlen(requestMenu), 0);
-
           lireListeJoueur(listeJoueurs);
-          printf("3eme joueur pseudo : %s", listeJoueurs[2].pseudo);
+          int validitePseudo = joueurExistant(pseudoInput);
 
-          close(scomm);
-          exit(0); /* on force la terminaison du fils */
+          if(validitePseudo == -2){
+            char requestValidation [] = "Votre pseudo est : ";
+
+            //creation d'un joueur
+            j.connecte = 1;
+            strcpy(j.biographie,"Votre biographie est vide. Allez la remplir ! ");
+            j.occupe = false;
+            j.nbVictoires = 0;
+            strcpy(j.pseudo, pseudoInput);
+            strcat(requestValidation, j.pseudo);
+
+            printf("Ajout du joueur %s dans la base de données\n", j.pseudo);
+            ecrireListeJoueur(j);
+
+            char c = '1';
+            write(scomm, &c, 1);
+            joueurNonValide = false;
+          }else if (validitePseudo == -1){
+            char c = '0';
+            write(scomm, &c, 1);
+          }else{
+            j = listeJoueurs[validitePseudo];
+            j.connecte = 1;
+            char c = '1';
+            write(scomm, &c, 1);
+            joueurNonValide = false;
+          }
+
+        }
+          
+         
+
+          char requestMenu[] = "--------------- Bonjour ";
+          strcat(requestMenu, strcat(j.pseudo,"---------------\n \t1: Défier un joueur \n\t2: Voir son profil \n\t3: Modifer sa biographie \n\t4: Déconnexion")) ;
+          send(scomm, requestMenu, strlen(requestMenu), 0);
+        
+
+        close(scomm);
+        exit(0); /* on force la terminaison du fils */
       }
       else /* c’est le pere */
       {
