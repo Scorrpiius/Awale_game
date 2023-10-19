@@ -13,6 +13,24 @@
 
 #define BUFSIZE 1024
 
+void lecture(int * sockfd){
+  char c;
+  while (1) {
+    c=getchar();
+    write (*sockfd,&c,1); 
+    if(c=='\n'){
+      break;
+    }
+  }
+}
+void affichage(int * sockfd, char * buffer){
+  int i = recv(*sockfd, buffer, BUFSIZE, 0); 
+  if(i>=0){
+        buffer[i] = '\0';
+        printf("%s\n", buffer);
+  }
+}
+
 int main(int argc, char** argv )
 { 
   int    sockfd,newsockfd,clilen,chilpid,ok,nleft,nbwriten;
@@ -43,27 +61,16 @@ int main(int argc, char** argv )
     {printf("socket error\n");exit(0);}
     
   
-  /* repete dans le socket tout ce qu'il entend */
-  int i = recv(sockfd, buffer, BUFSIZE, 0); 
-  if(i>=0){
-        buffer[i] = '\0';
-        printf("%s\n", buffer);
-  }
-  while (1) {
-    c=getchar();
-    write (sockfd,&c,1); 
-    if(c=='\n'){
-      break;
-    }
-  }
+  /* Repete dans le socket tout ce qu'il entend */
+  affichage(&sockfd, buffer);
+  lecture(&sockfd);
 
-  //validation du serveur
-  i = recv(sockfd, buffer, BUFSIZE, 0); 
-  if(i>=0){
-        buffer[i] = '\0';
-        printf("%s\n", buffer);
-  }
-  
+  /*Validation du serveur*/
+  affichage(&sockfd, buffer);
+
+  /*Affichage du menu*/
+  affichage(&sockfd, buffer);
+  lecture(&sockfd);
   
   /*  attention il s'agit d'une boucle infinie 
    *  le socket n'est jamais ferme !

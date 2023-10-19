@@ -172,6 +172,9 @@ int main(int argc, char** argv )
           printf("Ajout du joueur\n");
           ecrireListeJoueur(j);
 
+          char requestMenu[] = "--------------- Menu ---------------\n \t1: Défier un joueur \n\t2: Voir son profil \n\t3: Modifer sa biographie \n\t4: Déconnexion";
+          send(scomm, requestMenu, strlen(requestMenu), 0);
+
           lireListeJoueur();
 
           close(scomm);
