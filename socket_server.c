@@ -22,7 +22,7 @@ typedef struct Joueur{
   
 } Joueur;
 
-
+Joueur listeJoueurs[200];
 void ecrireListeJoueur(Joueur j){
   FILE* fic ;
 
@@ -40,9 +40,8 @@ void ecrireListeJoueur(Joueur j){
 
 } 
 
-void lireListeJoueur(){
-  FILE* fic ;
-  Joueur liste[100];
+void lireListeJoueur(Joueur* listeJoueurParam){
+    FILE* fic ;
 
 
 //ouverture du fic de données CSV
@@ -54,29 +53,27 @@ void lireListeJoueur(){
     }else{
       char c;
       bool fileEnd = false;
-      Joueur listeJoueur[100]; 
+      
       int indice =0;
       while (!fileEnd) {
             
   
-            char pseudoCSV[100];
+            char ligne[300];
             int index=0;
-            while((c=fgetc(fic)) != ';'){
-              pseudoCSV[index] = c;
+            while((c=fgetc(fic)) != '\n'){
+              ligne[index] = c;
               index++;
             }
-            pseudoCSV[index]='\0';
-            strcpy(listeJoueur[indice].pseudo, pseudoCSV);
+            ligne[index]='\0';
+            char * infosJoueur = strtok(ligne, ";");
+            strcpy(listeJoueurParam[indice].pseudo, infosJoueur);
+            infosJoueur = strtok(NULL, ";");
+            listeJoueurParam[indice].nbVictoires = atoi(infosJoueur);
+            infosJoueur = strtok(NULL, ";");
+            listeJoueurParam[indice].connecte = atoi(infosJoueur);
+            
 
-            char nbVictoiresCSV = fgetc(fic);
-            listeJoueur[indice].nbVictoires = atoi(&nbVictoiresCSV);
-            fgetc(fic);
-            char connecteCSV = fgetc(fic);
-            listeJoueur[indice].connecte = atoi(&connecteCSV);
-            fgetc(fic);
-            fgetc(fic);
-
-            printf("%s avec %d nombres de victoires\n", listeJoueur[indice].pseudo, listeJoueur[indice].nbVictoires);
+            printf("%s avec %d nombres de victoires\n", listeJoueurParam[indice].pseudo, listeJoueurParam[indice].nbVictoires);
 
             if((c=fgetc(fic))== EOF){
               fileEnd = true; 
@@ -100,7 +97,7 @@ int main(int argc, char** argv )
   int pid;
   struct sockaddr_in cli_addr,serv_addr;
  
-  Joueur listeJoueurs[200];
+  
   int nbJoueur = 0;
   
 
@@ -175,7 +172,8 @@ int main(int argc, char** argv )
           char requestMenu[] = "--------------- Menu ---------------\n \t1: Défier un joueur \n\t2: Voir son profil \n\t3: Modifer sa biographie \n\t4: Déconnexion";
           send(scomm, requestMenu, strlen(requestMenu), 0);
 
-          lireListeJoueur();
+          lireListeJoueur(listeJoueurs);
+          printf("3eme joueur pseudo : %s", listeJoueurs[2].pseudo);
 
           close(scomm);
           exit(0); /* on force la terminaison du fils */
