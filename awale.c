@@ -7,6 +7,75 @@ int plateau[12];
 int scoreJoueur1;
 int scoreJoueur2;
 
+int coupValide(int coup, int joueur){
+    // 0 mauvaise saisie
+    // -1 coup valide
+    // -2 coup invalide 
+    // -3 case vide
+    // -4 coup invalide et partie finie
+
+    int valide = 0;
+    bool plateauVide = true;
+    if (coup < 1 || coup > 6){
+        return 0;
+    }
+    int nbrGraines = (joueur == 1) ? plateau[coup-1] : plateau[12-coup];
+    if (nbrGraines == 0){
+        return -3;
+    }
+    if(joueur == 1){
+        int vraiCoup = coup -1;
+        // On vérifie si le plateau adverse est vide 
+        for(int i = 11; i >= 6; i--){
+            if (plateau[i] != 0){
+                plateauVide = false;
+            }
+        }
+        if (!plateauVide){
+            return -1;
+        }
+        // Le plateau adverse est vide on vérifie si le coup du joueur nourrit le plateau du joueur adverse
+        if (plateau[vraiCoup] + vraiCoup >= 6){
+            return -1;
+        } else { 
+            /* Vérifier si il existe un coup tel qu'il nourrit le joueur adverse
+                si oui alors il faut le jouer
+                si non la partie est finie
+                */
+            for (int i = 0; i < 6; i++){
+                if (plateau[i] + i >= 6){
+                    return -2;
+                }   
+
+            }   
+        }
+        return -3;
+    } else if (joueur == 2){
+        int vraiCoup = 12 - coup;
+        // Même chose pour le joueur 2
+        for(int i = 0; i <6; i++){
+            if (plateau[i] != 0){
+                plateauVide = false;
+            }
+        }
+        if (!plateauVide){
+            return -1;
+        }
+        if (plateau[vraiCoup] - coup >= 0){
+            return -1;
+        } else { 
+            for (int i = 11; i >= 6; i--){
+                if (plateau[i] + i >= 6){
+                    return -2;
+                }   
+
+            }   
+        }
+        return -4;
+    }
+    
+}  
+
 void afficherPlateau()
 {
 
@@ -106,7 +175,7 @@ void jouerCoup(int coup, int joueur)
 {
 
     int nbGraines;
-    if (joueur == 1)
+    if (joueur == 1 )
     {
         coup = coup - 1;
         nbGraines = plateau[coup];
@@ -206,16 +275,20 @@ int main(int argc, char **argv)
         printf("%s\n\x1b[1m\x1b[4mJoueur %d\x1b[0m : Quel coup souhaitez-vous jouer ? (de 1 à 6)  \x1b[32m\x1b[1m", couleur, tourJoueur);
 
         int verif = scanf("%d", &coup);
-        int nbrGraines = (tourJoueur == 1) ? plateau[coup-1] : plateau[12-coup];
+        int valide = coupValide(coup, tourJoueur);
         
-        if (verif != 1 || scanf("%d", &coup) != 1 || coup < 1 || coup > 6) {
+        if (verif != 1 || valide == 0) {
             printf("\n\x1b[31mSaisie invalide. Veuillez saisir un nombre entre 1 et 6.\x1b[0m\n");
             while (getchar() != '\n'); // Nettoie le tampon d'entrée
-        } else if (nbrGraines == 0){
+        } else if (verif != 1 || valide == -3 ){
             printf("\n\x1b[31mVous ne pouvez pas choisir une case vide.\x1b[0m\n");
-            while (getchar() != '\n'); // Nettoie le tampon d'entrée
-        } else {
+            while (getchar() != '\n'); 
+        } else if (verif != 1 || valide == -2){
+            printf("\n\x1b[31mVous devez nourrir le joueur adverse.\x1b[0m\n");
+            while (getchar() != '\n'); 
+        } else  {
             break; // Sort de la boucle si la saisie est valide
+
         }
     } while (true);
 
