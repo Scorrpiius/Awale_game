@@ -84,7 +84,7 @@ void ecrireListeJoueur(Joueur j)
   else
   {
     fseek(fic, 0, SEEK_END);
-    fprintf(fic, "%s;%d;%d;\n", j.pseudo, j.nbVictoires, j.connecte);
+    fprintf(fic, "%s;%s;%d;%d;\n", j.pseudo, j.biographie, j.nbVictoires, j.connecte);
   }
   fclose(fic);
 }
@@ -120,11 +120,13 @@ void lireListeJoueur(Joueur *listeJoueurParam)
       char *infosJoueur = strtok(ligne, ";");
       strcpy(listeJoueurParam[indice].pseudo, infosJoueur);
       infosJoueur = strtok(NULL, ";");
+      strcpy(listeJoueurParam[indice].biographie, infosJoueur);
+      infosJoueur = strtok(NULL, ";");
       listeJoueurParam[indice].nbVictoires = atoi(infosJoueur);
       infosJoueur = strtok(NULL, ";");
       listeJoueurParam[indice].connecte = atoi(infosJoueur);
 
-      // printf("%s avec %d nombres de victoires\n", listeJoueurParam[indice].pseudo, listeJoueurParam[indice].nbVictoires);
+      //printf("%s , bio : %s \n", listeJoueurParam[indice].pseudo, listeJoueurParam[indice].biographie);
 
       if ((c = fgetc(fic)) == EOF)
       {
@@ -162,7 +164,7 @@ void updateListeJoueur(int indiceJoueur, Joueur j)
       {
         // Remplace la nième ligne par les données
         fseek(fic, -strlen(ligne), SEEK_CUR); // Mettre le curseur au début de la ligne
-        fprintf(fic, "%s;%d;%d;", j.pseudo, j.nbVictoires, j.connecte);
+        fprintf(fic, "%s;%s;%d;%d;", j.pseudo, j.biographie, j.nbVictoires, j.connecte);
         break;
       }
     }
@@ -302,6 +304,7 @@ int main(int argc, char **argv)
         }
       }
 
+
       // On remet à jour la liste des joueurs avec les potentielles modifications (ajout de joueur ou joueur connecté)
       lireListeJoueur(listeJoueurs);
       bool joueurSurMenu = true;
@@ -311,24 +314,26 @@ int main(int argc, char **argv)
         strcat(requestMenu, j.pseudo);
         strcat(requestMenu, "\x1b[0m ---------------\n \t1: Défier un joueur \n\t2: Voir son profil \n\t3: Modifer sa biographie \n\t4: Déconnexion\n\0");
         send(scomm, requestMenu, strlen(requestMenu), 0);
-
-      char reponse[3];
-      int indice = 0;
-       while (1)
+        
+        
+        char reponse;
+        char c;
+        while (1)
         {
-          char c;
+
           read(scomm, &c, 1);
           // printf("%c", c);
           if (c == '\n')
           {
             break;
           }
-          reponse[indice] = c;
-          indice++;
+          reponse = c;
+          // enregistrer le pseudo
+
         }
 
 
-        if (strcmp(reponse, "1") == 0)
+        if (reponse == '1')
         {
           lireListeJoueur(listeJoueurs);
           char request[200] = "Liste des joueurs connectés : \n";
@@ -342,7 +347,28 @@ int main(int argc, char **argv)
           send(scomm, requestMenu, strlen(requestMenu), 0);
 
         
-        }else if (strcmp(reponse, "4") == 0)
+        }else if (reponse == '3')
+        {
+          char request[100] = "Entrez votre nouvelle biographie : \n";
+          send(scomm, request, strlen(request), 0);
+          
+          int indice = 0;
+          char buffer[100];
+          while (1)
+          {
+            read(scomm, &c, 1);
+            if (c == '\n')
+            {
+              break;
+            }
+            // enregistrer le pseudo
+            buffer[indice] = c;
+            indice++;
+          }
+          buffer[indice] = '\0';
+          strcpy(j.biographie, buffer);
+          updateListeJoueur(validitePseudo, j);
+        }else if (reponse == '4')
         {
           joueurSurMenu = false;
           j.connecte = 0;

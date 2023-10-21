@@ -14,14 +14,16 @@
 
 #define BUFSIZE 1024
 
-void lecture(int * sockfd){
+char lecture(int * sockfd){
   char c;
+  char retour;
   while (1) {
     c=getchar();
     write (*sockfd,&c,1); 
     if(c=='\n'){
       break;
     }
+    retour = c;
     
   }
 }
@@ -87,16 +89,22 @@ int main(int argc, char** argv )
   
   bool clientConnecte = true;
   while(clientConnecte){
-     /*Affichage du menu*/
+     //Affichage du menu
     affichage(&sockfd, buffer);
-    lecture(&sockfd);
+    c=lecture(&sockfd);
 
-    if(c == '1'){
-      affichage(&sockfd, buffer);
-    }else if(c == '4'){
-      clientConnecte = false;
-    }
+
+      if(c == '1'){
+        affichage(&sockfd, buffer);
+      }else if(c == '3'){
+        affichage(&sockfd, buffer);
+        lecture(&sockfd);
+      }else if(c == '4'){
+        clientConnecte = false;
+      }
+    
   }
+  
   printf("Deconnexion \n");
  
   
