@@ -206,7 +206,7 @@ int main(int argc, char **argv)
         printf("%s\n\x1b[1m\x1b[4mJoueur %d\x1b[0m : Quel coup souhaitez-vous jouer ? (de 1 à 6)  \x1b[32m\x1b[1m", couleur, tourJoueur);
 
         int verif = scanf("%d", &coup);
-        int nbrGraines = (tourJoueur == 1) ? plateau[coup-1] : plateau[12-coup]:
+        int nbrGraines = (tourJoueur == 1) ? plateau[coup-1] : plateau[12-coup];
         
         if (verif != 1 || scanf("%d", &coup) != 1 || coup < 1 || coup > 6) {
             printf("\n\x1b[31mSaisie invalide. Veuillez saisir un nombre entre 1 et 6.\x1b[0m\n");

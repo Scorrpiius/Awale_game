@@ -80,6 +80,8 @@ int main(int argc, char** argv )
     /*Validation du serveur*/
     if(receptionValidite(&sockfd)=='1'){
       accepteParServeur=true;
+    } else {
+      printf("ERREUR : Un joueur est déjà connecté avec ce pseudo\n");
     }
   }
   
