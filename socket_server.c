@@ -309,14 +309,40 @@ int main(int argc, char **argv)
       {
         char requestMenu[200] = "--------------- Bonjour \x1b[1m";
         strcat(requestMenu, j.pseudo);
-        strcat(requestMenu, "\x1b[0m ---------------\n \t1: Défier un joueur \n\t2: Voir son profil \n\t3: Modifer sa biographie \n\t4: Déconnexion\0");
+        strcat(requestMenu, "\x1b[0m ---------------\n \t1: Défier un joueur \n\t2: Voir son profil \n\t3: Modifer sa biographie \n\t4: Déconnexion\n\0");
         send(scomm, requestMenu, strlen(requestMenu), 0);
 
-        char reponse;
-        read(scomm, &reponse, 1);
-        // printf("%c\n", reponse);
+      char reponse[3];
+      int indice = 0;
+       while (1)
+        {
+          char c;
+          read(scomm, &c, 1);
+          // printf("%c", c);
+          if (c == '\n')
+          {
+            break;
+          }
+          reponse[indice] = c;
+          indice++;
+        }
 
-        if (reponse == '4')
+
+        if (strcmp(reponse, "1") == 0)
+        {
+          lireListeJoueur(listeJoueurs);
+          char request[200] = "Liste des joueurs connectés : \n";
+          for(int i = 0; i< nbJoueurs; i++){
+            if(listeJoueurs[i].connecte == 1 && strcmp(listeJoueurs[i].pseudo,j.pseudo) != 0)
+            {
+              strcat(requestMenu, listeJoueurs[i].pseudo);
+              strcat(requestMenu, "\n");
+            }
+          }
+          send(scomm, requestMenu, strlen(requestMenu), 0);
+
+        
+        }else if (strcmp(reponse, "4") == 0)
         {
           joueurSurMenu = false;
           j.connecte = 0;

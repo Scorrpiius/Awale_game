@@ -89,9 +89,11 @@ int main(int argc, char** argv )
   while(clientConnecte){
      /*Affichage du menu*/
     affichage(&sockfd, buffer);
-    c = getchar();
-    write(sockfd, &c, 1);
-    if(c == '4'){
+    lecture(&sockfd);
+
+    if(c == '1'){
+      affichage(&sockfd, buffer);
+    }else if(c == '4'){
       clientConnecte = false;
     }
   }
