@@ -1,9 +1,6 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
-#define RED "\033[31m"
-
-
 // Constantes de jeu
 
 #define MAUVAISE_SAISIE 0
