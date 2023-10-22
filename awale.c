@@ -3,40 +3,44 @@
 #include <stdlib.h>
 #define RED "\033[31m"
 
+
+// Constantes de jeu
+
+#define MAUVAISE_SAISIE 0
+#define COUP_VALIDE -1
+#define COUP_INVALIDE -2
+#define CASE_VIDE -3
+#define PARTIE_FINIE -4
+
 int plateau[12];
 int scoreJoueur1;
 int scoreJoueur2;
 
-int coupValide(int coup, int joueur){
-    // 0 mauvaise saisie
-    // -1 coup valide
-    // -2 coup invalide 
-    // -3 case vide
-    // -4 coup invalide et partie finie
 
-    int valide = 0;
-    bool plateauVide = true;
+
+int coupValide(int coup, int joueur){
+
     if (coup < 1 || coup > 6){
-        return 0;
+        return MAUVAISE_SAISIE;
     }
+
     int nbrGraines = (joueur == 1) ? plateau[coup-1] : plateau[12-coup];
     if (nbrGraines == 0){
-        return -3;
+        return CASE_VIDE;
     }
+
     if(joueur == 1){
         int vraiCoup = coup -1;
-        // On vérifie si le plateau adverse est vide 
-        for(int i = 11; i >= 6; i--){
+        
+        for(int i = 11; i >= 6; i--){ // On vérifie si le plateau adverse est vide 
             if (plateau[i] != 0){
-                plateauVide = false;
+                return COUP_VALIDE;
             }
         }
-        if (!plateauVide){
-            return -1;
-        }
-        // Le plateau adverse est vide on vérifie si le coup du joueur nourrit le plateau du joueur adverse
-        if (plateau[vraiCoup] + vraiCoup >= 6){
-            return -1;
+
+        
+        if (plateau[vraiCoup] + vraiCoup >= 6){ // Le plateau adverse est vide on vérifie si le coup du joueur nourrit le plateau du joueur adverse
+            return COUP_VALIDE;
         } else { 
             /* Vérifier si il existe un coup tel qu'il nourrit le joueur adverse
                 si oui alors il faut le jouer
@@ -44,34 +48,32 @@ int coupValide(int coup, int joueur){
                 */
             for (int i = 0; i < 6; i++){
                 if (plateau[i] + i >= 6){
-                    return -2;
+                    return COUP_INVALIDE;
                 }   
 
             }   
         }
-        return -3;
-    } else if (joueur == 2){
+        return PARTIE_FINIE;
+    } else if (joueur == 2){ // Même chose pour le joueur 2
         int vraiCoup = 12 - coup;
-        // Même chose pour le joueur 2
+       
         for(int i = 0; i <6; i++){
             if (plateau[i] != 0){
-                plateauVide = false;
+                return COUP_VALIDE;
             }
         }
-        if (!plateauVide){
-            return -1;
-        }
+
         if (plateau[vraiCoup] - coup >= 0){
-            return -1;
+            return COUP_VALIDE;
         } else { 
             for (int i = 11; i >= 6; i--){
                 if (plateau[i] + i >= 6){
-                    return -2;
+                    return COUP_INVALIDE;
                 }   
 
             }   
         }
-        return -4;
+        return PARTIE_FINIE;
     }
     
 }  
@@ -178,11 +180,15 @@ void jouerCoup(int coup, int joueur)
     if (joueur == 1 )
     {
         coup = coup - 1;
+        int caseInit = coup;
         nbGraines = plateau[coup];
         plateau[coup] = 0;
         for (int i = coup + 1; i <= coup + nbGraines; i++)
-        {
-            plateau[i % 12]++;
+        {   
+            if( !(i%12 == caseInit)){
+                plateau[i % 12]++;
+
+            } else { coup++; }
         }
 
         int caseFin = (nbGraines + coup) % 12;
@@ -191,12 +197,16 @@ void jouerCoup(int coup, int joueur)
     else
     {
         coup = 12 - coup;
+        int caseInit = coup;
         nbGraines = plateau[coup];
         plateau[coup] = 0;
 
         for (int i = coup + 1; i <= coup + nbGraines; i++)
         {
-            plateau[i % 12]++;
+            if( !(i%12 == caseInit)){
+                plateau[i % 12]++;
+
+            } else { coup++; }
         }
 
         int caseFin = (nbGraines + coup) % 12;
@@ -286,7 +296,7 @@ int main(int argc, char **argv)
         } else if (verif != 1 || valide == -2){
             printf("\n\x1b[31mVous devez nourrir le joueur adverse.\x1b[0m\n");
             while (getchar() != '\n'); 
-        } else  {
+        } else {
             break; // Sort de la boucle si la saisie est valide
 
         }
