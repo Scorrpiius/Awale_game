@@ -1,13 +1,5 @@
-#include <stdio.h>
-#include <stdbool.h>
-#include <stdlib.h>
-// Constantes de jeu
+#include "awale.h"
 
-#define MAUVAISE_SAISIE 0
-#define COUP_VALIDE -1
-#define COUP_INVALIDE -2
-#define CASE_VIDE -3
-#define PARTIE_FINIE -4
 
 int plateau[12];
 int scoreJoueur1;
@@ -75,7 +67,7 @@ int coupValide(int coup, int joueur){
     
 }  
 
-void afficherPlateau()
+void afficherPlateau(int * plateau)
 {
 
     printf("\n");
@@ -110,10 +102,10 @@ void afficherPlateau()
     printf("\t\t\t╚═══╩═══╩═══╩═══╩═══╩═══╝\n");
 }
 
-void initPlateau()
+void initPlateau(int* scoreJoueur1, int* scoreJoueur2, int* plateau)
 {
-    scoreJoueur1 = 0;
-    scoreJoueur2 = 0;
+    *scoreJoueur1 = 0;
+    *scoreJoueur2 = 0;
     for (int i = 0; i < 12; i++)
     {
         plateau[i] = 4;
@@ -266,7 +258,7 @@ void finDePartie()
     }
 }
 
-int main(int argc, char **argv)
+/*int main(int argc, char **argv)
 {
     initPlateau();
 
@@ -295,11 +287,7 @@ int main(int argc, char **argv)
             while (getchar() != '\n'); 
         } else {
             break; // Sort de la boucle si la saisie est valide
-
-        }
-    } while (true);
-
-    printf("\n\x1b[0mVous avez joué le coup : \x1b[32m\x1b[1m%d\x1b[0m\n", coup);
+void finDePartie();
 
 
 
@@ -309,4 +297,4 @@ int main(int argc, char **argv)
         tourJoueur = (tourJoueur == 1) ? 2 : 1;
     }
     finDePartie();
-}
+}*/

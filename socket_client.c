@@ -43,6 +43,10 @@ char receptionValidite(int * sockfd){
   return c;
 }
 
+void jouerPartie(int * sockfd, char * buffer){
+  affichage(sockfd, buffer);
+}
+
 int main(int argc, char** argv )
 { 
   int    sockfd,newsockfd,clilen,chilpid,ok,nleft,nbwriten;
@@ -94,23 +98,41 @@ int main(int argc, char** argv )
     c=lecture(&sockfd);
 
       if(c == '1'){
+
         affichage(&sockfd, buffer);
         char rep = lecture(&sockfd);
+
         if (rep == '0'){
           continue;
         }
+
         affichage(&sockfd, buffer);
         char c;
         read(sockfd,&c,1);
+
         if(c == '1'){
+
           affichage(&sockfd, buffer);
+          char reponseDefi;
+          read(sockfd,&reponseDefi,1);
+
+          if(reponseDefi == '1'){
+            jouerPartie(&sockfd, buffer);
+          }
         }
       }else if(c == '3'){
+
         affichage(&sockfd, buffer);
         lecture(&sockfd);
       }
       else if(c == '5'){
+
         clientConnecte = false;
+
+      }else if(c == 'y'){
+
+        jouerPartie(&sockfd, buffer);
+        
       }
     
   }

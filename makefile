@@ -1,28 +1,28 @@
 CC = gcc
 CCFLAGS = -w
 OBJ = awale.o socket_client.o socket_server.o 
-EXEC = client awale server
+EXEC = client server
 
 all: $(EXEC)
-
-client : socket_client.o 
-		$(CC) -o client socket_client.o $(CCFLAGS)
-
-server : socket_server.o 
-		$(CC) -o server socket_server.o $(CCFLAGS)
 
 awale : awale.o
 		$(CC) -o awale awale.o $(CCFLAGS)
 
+awale.o : awale.c awale.h
+		$(CC) -c awale.c awale.h $(CCFLAGS)
+
 socket_client.o : socket_client.c
 		$(CC) -c socket_client.c $(CCFLAGS)
 
-socket_server.o : socket_server.c
-		$(CC) -c socket_server.c $(CCFLAGS)
+socket_server.o : socket_server.c awale.h
+		$(CC) -c socket_server.c awale.h $(CCFLAGS)
 
-awale.o : awale.c
-		$(CC) -c awale.c $(CCFLAGS)
+client : socket_client.o 
+		$(CC) -o client socket_client.o $(CCFLAGS)
+
+server : socket_server.o awale.o
+		$(CC) -o server socket_server.o awale.o $(CCFLAGS)
 
 clean :
-		rm *.o client server awale
+		rm *.o client server
 	

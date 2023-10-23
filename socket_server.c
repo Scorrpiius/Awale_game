@@ -14,6 +14,7 @@
 #include <stdbool.h>
 #include <pthread.h>
 #include <time.h>
+#include "awale.h"
 
 typedef struct Joueur
 {
@@ -27,8 +28,78 @@ typedef struct Joueur
 
 } Joueur;
 
+typedef struct Partie
+{
+  char pseudoJoueur1[100];
+  char pseudoJoueur2[100];
+  int plateau[12];
+  int scoreJoueur1;
+  int scoreJoueur2;
+  int tourJoueur;
+
+} Partie;
+
 Joueur listeJoueurs[200];
+Partie listePartiesEnCours[100];
+int nbPartiesEnCours;
 int nbJoueurs;
+
+void initPartie(char* pseudo1, char* pseudo2){
+  Partie p;
+  strcpy(p.pseudoJoueur1, pseudo1);
+  strcpy(p.pseudoJoueur2, pseudo2);
+  initPlateau(&p.scoreJoueur1, &p.scoreJoueur2, p.plateau);
+
+  //tour du premier joueur au hasard
+  int tourJoueur = (rand() %2) +1;
+  listePartiesEnCours[nbPartiesEnCours] = p;
+  nbPartiesEnCours++;
+}
+
+void jouerPartie(Joueur * j, int *sockfd){
+
+  bool partieTrouvee = false;
+  Partie * p;
+  int numJoueur;
+
+  while(!partieTrouvee){
+
+    for(int i = 0; i< nbPartiesEnCours; i++){
+
+      if(strcmp(listePartiesEnCours[i].pseudoJoueur1, j->pseudo) == 0 ){
+        p = &listePartiesEnCours[i];
+        partieTrouvee = true;
+        numJoueur = 1;
+        break;
+
+      }else if(strcmp(listePartiesEnCours[i].pseudoJoueur2, j->pseudo)== 0){
+        
+        p = &listePartiesEnCours[i];
+        partieTrouvee = true;
+        numJoueur = 2;
+        break;
+
+      }
+    }
+  }
+  printf("TEST_0\n");
+  if(p->tourJoueur == numJoueur){
+    printf("TEST_1\n");
+    char request[100] = "La partie commence ! \n C'est à votre tour ! \n\0";
+    send(*sockfd, request, strlen(request), 0);
+  }else{
+    printf("TEST_2\n");
+    char request[100] = "La partie commence ! \n C'est au tour de votre adversaire ! \n\0";
+    send(*sockfd, request, strlen(request), 0);
+  }
+
+  bool test = true;
+  while(test){
+    afficherPlateau(p->plateau);
+    test = false;
+  }
+}
+
 
 char *getHeure()
 {
@@ -267,23 +338,51 @@ void app (int scomm){
   bool joueurSurMenu = true;
   while (joueurSurMenu)
   {
-    if(j->occupe == false){
-        char requestMenu[200] = "--------------- Bonjour \x1b[1m";
-        strcat(requestMenu, j->pseudo);
-        if(strcmp(j->demandeurDeDefi, "\0") != 0){
-          strcat(requestMenu, "\x1b[0m ---------------\n \tLe joueur ");
-          strcat(requestMenu, j->demandeurDeDefi);
-          strcat(requestMenu, " vous a défié !!! (Appuyez sur y pour accepter le défi, n pour refuser) ");
-          send(scomm, requestMenu, strlen(requestMenu), 0);
-        }else{
-          strcat(requestMenu, "\x1b[0m ---------------\n \t1: Défier un joueur \n\t2: Voir son profil \n\t3: Modifer sa biographie \n\t4: Rafraichir le menu\n\t5: Déconnexion\n\0");
-          send(scomm, requestMenu, strlen(requestMenu), 0);
+    
+      char requestMenu[200] = "--------------- Bonjour \x1b[1m";
+      strcat(requestMenu, j->pseudo);
+      if(strcmp(j->demandeurDeDefi, "\0") != 0){
+        strcat(requestMenu, "\x1b[0m ---------------\n \tLe joueur ");
+        strcat(requestMenu, j->demandeurDeDefi);
+        strcat(requestMenu, " vous a défié !!! (Appuyez sur y pour accepter le défi, n pour refuser) ");
+        send(scomm, requestMenu, strlen(requestMenu), 0);
+      }else{
+        strcat(requestMenu, "\x1b[0m ---------------\n \t1: Défier un joueur \n\t2: Voir son profil \n\t3: Modifer sa biographie \n\t4: Rafraichir le menu\n\t5: Déconnexion\n\0");
+        send(scomm, requestMenu, strlen(requestMenu), 0);
+      }
+
+      char reponse;
+      char c;
+      while (1)
+      {
+
+        read(scomm, &c, 1);
+        if (c == '\n')
+        {
+          break;
         }
-        
-        
-        
-        char reponse;
-        char c;
+        reponse = c;
+
+      }
+
+
+      if (reponse == '1')
+      {
+        lireListeJoueur(listeJoueurs);
+        char request[200] = "Liste des joueurs connectés : \n";
+        for(int i = 0; i< nbJoueurs; i++){
+          if(listeJoueurs[i].connecte == 1 && strcmp(listeJoueurs[i].pseudo,j->pseudo) != 0)
+          {
+            strcat(request, listeJoueurs[i].pseudo);
+            strcat(request, "\n");
+          }
+        }
+        strcat(request, "Entrez le pseudo du joueur que vous souhaitez défier (0 pour revenir au menu) : \n");
+        send(scomm, request, strlen(request), 0);
+
+        //lecture du pseudo ou du retour menu
+        char pseudoDefiChoisi[100];
+        int indice = 0;
         while (1)
         {
 
@@ -292,119 +391,93 @@ void app (int scomm){
           {
             break;
           }
-          reponse = c;
+          pseudoDefiChoisi[indice] = c;
+          indice++;
 
         }
+        if(pseudoDefiChoisi[0] == '0'){
+            continue;
+        }
 
-
-        if (reponse == '1')
-        {
-          lireListeJoueur(listeJoueurs);
-          char request[200] = "Liste des joueurs connectés : \n";
-          for(int i = 0; i< nbJoueurs; i++){
-            if(listeJoueurs[i].connecte == 1 && strcmp(listeJoueurs[i].pseudo,j->pseudo) != 0)
-            {
-              strcat(request, listeJoueurs[i].pseudo);
-              strcat(request, "\n");
-            }
-          }
-          strcat(request, "Entrez le pseudo du joueur que vous souhaitez défier (0 pour revenir au menu) : \n");
-          send(scomm, request, strlen(request), 0);
-
-          //lecture du pseudo ou du retour menu
-          char pseudoDefiChoisi[100];
-          int indice = 0;
-          while (1)
-          {
-
-            read(scomm, &c, 1);
-            if (c == '\n')
-            {
-              break;
-            }
-            pseudoDefiChoisi[indice] = c;
-            indice++;
-
-          }
-          if(pseudoDefiChoisi[0] == '0'){
-              continue;
-          }
-
-          int i;
-          int demandeEnvoye = 0;
-          Joueur *adversaire;
-          for(i = 0; i<nbJoueurs; i++){
-            if(strcmp(pseudoDefiChoisi, listeJoueurs[i].pseudo) == 0){
-              if(strcmp(listeJoueurs[i].demandeurDeDefi, "\0")==0){
-                  strcpy(listeJoueurs[i].demandeurDeDefi,j->pseudo);
-                  char buffer[100] = "Votre demande a bien été envoyée \n";
-                  send(scomm, buffer, strlen(buffer), 0);
-                  adversaire = &listeJoueurs[i];
-                  demandeEnvoye = 1;
-                  write(scomm, &demandeEnvoye, 1);
-              }else{
-                char buffer[100] = "Le joueur est déjà défié...\n";
+        int i;
+        int demandeEnvoye = 0;
+        Joueur *adversaire;
+        for(i = 0; i<nbJoueurs; i++){
+          if(strcmp(pseudoDefiChoisi, listeJoueurs[i].pseudo) == 0){
+            if(strcmp(listeJoueurs[i].demandeurDeDefi, "\0")==0){
+                strcpy(listeJoueurs[i].demandeurDeDefi,j->pseudo);
+                char buffer[100] = "Votre demande a bien été envoyée \n";
                 send(scomm, buffer, strlen(buffer), 0);
+                adversaire = &listeJoueurs[i];
+                demandeEnvoye = 1;
                 write(scomm, &demandeEnvoye, 1);
-              }
-              break;
-            }
-          }
-          if (i == nbJoueurs){
-            char buffer[100] = "Le joueur n'existe pas";
-            send(scomm, buffer, strlen(buffer), 0);
-            write(scomm, &demandeEnvoye, 1);
-          }
-
-          if(demandeEnvoye == 1){
-            while(strcmp(adversaire->demandeurDeDefi, "\0") != 0 && adversaire->occupe == false){ }
-            if(strcmp(adversaire->demandeurDeDefi, "\0") == 0){
-              char buffer[100] = " Le joueur a refusé votre demande...\n";
-              send(scomm, buffer, strlen(buffer), 0);
             }else{
-              char buffer[100] = " Le joueur a accepté votre demande, la partie va commencer !\n";
+              char buffer[100] = "Le joueur est déjà défié...\n";
               send(scomm, buffer, strlen(buffer), 0);
-              j->occupe = true;
+              write(scomm, &demandeEnvoye, 1);
             }
+            break;
           }
-            
-        }else if (reponse == '3')
-        {
-          char request[100] = "Entrez votre nouvelle biographie : \n";
-          send(scomm, request, strlen(request), 0);
+        }
+        if (i == nbJoueurs){
+          char buffer[100] = "Le joueur n'existe pas";
+          send(scomm, buffer, strlen(buffer), 0);
+          write(scomm, &demandeEnvoye, 1);
+        }
+
+        if(demandeEnvoye == 1){
+          while(strcmp(adversaire->demandeurDeDefi, "\0") != 0 && adversaire->occupe == false){ }
+          if(strcmp(adversaire->demandeurDeDefi, "\0") == 0){
+            char refus = '0';
+            char buffer[100] = " Le joueur a refusé votre demande...\n\0";
+            send(scomm, buffer, strlen(buffer), 0);
+            write(scomm, &refus, 1);
+          }else{
+            char accepte = '1';
+            char buffer[100] = " Le joueur a accepté votre demande, la partie va commencer !\n\0";
+            send(scomm, buffer, strlen(buffer), 0);
+            write(scomm, &accepte, 1);
+            j->occupe = true; 
+            initPartie(j->pseudo, adversaire->pseudo);
+            jouerPartie(j, &scomm);
+          }
+        }
           
-          int indice = 0;
-          char buffer[100];
-          while (1)
+      }else if (reponse == '3')
+      {
+        char request[100] = "Entrez votre nouvelle biographie : \n";
+        send(scomm, request, strlen(request), 0);
+        
+        int indice = 0;
+        char buffer[100];
+        while (1)
+        {
+          read(scomm, &c, 1);
+          if (c == '\n')
           {
-            read(scomm, &c, 1);
-            if (c == '\n')
-            {
-              break;
-            }
-            // enregistrer le pseudo
-            buffer[indice] = c;
-            indice++;
+            break;
           }
-          buffer[indice] = '\0';
-          strcpy(j->biographie, buffer);
-          updateListeJoueur(validitePseudo, j);
+          // enregistrer le pseudo
+          buffer[indice] = c;
+          indice++;
         }
-        else if (reponse == '5')
-        {
-          joueurSurMenu = false;
-          j->connecte = 0;
-          updateListeJoueur(validitePseudo, j);
-        }else if (reponse == 'y')
-        {
-          j->occupe = true;
-        }else if (reponse == 'n')
-        {
-          strcpy(j->demandeurDeDefi,"\0");
-        }
-  }else{
-    printf("Les joueurs sont en pleine partie");
-  }
+        buffer[indice] = '\0';
+        strcpy(j->biographie, buffer);
+        updateListeJoueur(validitePseudo, j);
+      }
+      else if (reponse == '5')
+      {
+        joueurSurMenu = false;
+        j->connecte = 0;
+        updateListeJoueur(validitePseudo, j);
+      }else if (reponse == 'y')
+      {
+        j->occupe = true;
+        jouerPartie(j, &scomm);
+      }else if (reponse == 'n')
+      {
+        strcpy(j->demandeurDeDefi,"\0");
+      }
 }
     
   printf("%s Le joueur \x1b[1m\"%s\"\x1b[0m s'est deconnecté\n", getHeure(), j->pseudo);
@@ -419,6 +492,8 @@ int main(int argc, char **argv)
   char datas[] = "hello\n";
   int sockfd, scomm, clilen, chilpid, ok, nleft, nbwriten;
   struct sockaddr_in cli_addr, serv_addr;
+
+  nbPartiesEnCours = 0;
 
   if (argc != 2)
   {
