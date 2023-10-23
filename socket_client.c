@@ -130,9 +130,8 @@ int main(int argc, char** argv )
         clientConnecte = false;
 
       }else if(c == 'y'){
-
-        jouerPartie(&sockfd, buffer);
         
+        jouerPartie(&sockfd, buffer);
       }
     
   }

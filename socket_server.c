@@ -400,7 +400,7 @@ void app (int scomm){
         }
 
         int i;
-        int demandeEnvoye = 0;
+        char demandeEnvoye = '0';
         Joueur *adversaire;
         for(i = 0; i<nbJoueurs; i++){
           if(strcmp(pseudoDefiChoisi, listeJoueurs[i].pseudo) == 0){
@@ -409,7 +409,7 @@ void app (int scomm){
                 char buffer[100] = "Votre demande a bien été envoyée \n";
                 send(scomm, buffer, strlen(buffer), 0);
                 adversaire = &listeJoueurs[i];
-                demandeEnvoye = 1;
+                demandeEnvoye = '1';
                 write(scomm, &demandeEnvoye, 1);
             }else{
               char buffer[100] = "Le joueur est déjà défié...\n";
@@ -425,7 +425,7 @@ void app (int scomm){
           write(scomm, &demandeEnvoye, 1);
         }
 
-        if(demandeEnvoye == 1){
+        if(demandeEnvoye == '1'){
           while(strcmp(adversaire->demandeurDeDefi, "\0") != 0 && adversaire->occupe == false){ }
           if(strcmp(adversaire->demandeurDeDefi, "\0") == 0){
             char refus = '0';
