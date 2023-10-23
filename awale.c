@@ -5,6 +5,64 @@ int plateau[12];
 int scoreJoueur1;
 int scoreJoueur2;
 
+// Fonction pour échanger deux nombres
+void swap(char *x, char *y) {
+    char t = *x; *x = *y; *y = t;
+}
+ 
+// Fonction pour inverser `buffer[i…j]`
+char* reverse(char *buffer, int i, int j)
+{
+    while (i < j) {
+        swap(&buffer[i++], &buffer[j--]);
+    }
+ 
+    return buffer;
+}
+ 
+// Fonction itérative pour implémenter la fonction `itoa()` en C
+char* itoa(int value, char* buffer, int base)
+{
+    // entrée invalide
+    if (base < 2 || base > 32) {
+        return buffer;
+    }
+ 
+    // considère la valeur absolue du nombre
+    int n = abs(value);
+ 
+    int i = 0;
+    while (n)
+    {
+        int r = n % base;
+ 
+        if (r >= 10) {
+            buffer[i++] = 65 + (r - 10);
+        }
+        else {
+            buffer[i++] = 48 + r;
+        }
+ 
+        n = n / base;
+    }
+ 
+    // si le nombre est 0
+    if (i == 0) {
+        buffer[i++] = '0';
+    }
+ 
+    // Si la base est 10 et la valeur est négative, la string résultante
+    // est précédé d'un signe moins (-)
+    // Avec toute autre base, la valeur est toujours considérée comme non signée
+    if (value < 0 && base == 10) {
+        buffer[i++] = '-';
+    }
+ 
+    buffer[i] = '\0'; // string de fin nulle
+ 
+    // inverse la string et la renvoie
+    return reverse(buffer, 0, i - 1);
+}
 
 
 int coupValide(int coup, int joueur){
@@ -69,60 +127,73 @@ int coupValide(int coup, int joueur){
 
 void afficherPlateau(int * plateau, int *sock, int scoreJoueur1, int scoreJoueur2)
 {
-    printf("Je suis entré dans afficahge palrazojrhireoae");
-//     char affichagePlateau[4096]="\n\n\t\t\t\x1b[90m  1   2   3   4   5   6\x1b[0m\n\t\t\t╔═══╦═══╦═══╦═══╦═══╦═══╗\n\033[31mJoueur 1\x1b[0m : \x1b[32m\x1b[1m";
+    //printf("Je suis entré dans afficahge palrazojrhireoae\n");
+    char affichagePlateau[4096]="\n\n\t\t\t\x1b[90m  1   2   3   4   5   6\x1b[0m\n\t\t\t╔═══╦═══╦═══╦═══╦═══╦═══╗\n\033[31mJoueur 1\x1b[0m : \x1b[32m\x1b[1m";
+    //printf("TEST N°1 %s", affichagePlateau);
+    char scoreJ1[2];
+    char scoreJ2[2];
+    char casePlateau[2];
 
-//     strcat(affichagePlateau, scoreJoueur1);
-//     strcat(affichagePlateau, "\x1b[0m pts\t║ ");
 
-// /*
-//     printf("\n");
+    itoa(scoreJoueur1, scoreJ1, 10);
+    itoa(scoreJoueur2, scoreJ2, 10);
+    strcat(affichagePlateau, scoreJ1);
+    //printf("TEST N°2 %s", affichagePlateau);
 
-//     printf("\n\t\t\t\x1b[90m  1   2   3   4   5   6\x1b[0m\n");
-//     printf("\t\t\t╔═══╦═══╦═══╦═══╦═══╦═══╗\n");
+    strcat(affichagePlateau, "\x1b[0m pts\t║ ");
+    //printf("TEST N°3 %s", affichagePlateau);
 
-//     printf("\033[31mJoueur 1\x1b[0m : \x1b[32m\x1b[1m%d\x1b[0m pts\t║ ", scoreJoueur1);
-//     */
-//     for (int i = 0; i < 6; i++)
-//     {
-//         if (plateau[i] >= 10) {
-//             strcat(affichagePlateau, plateau[i]);
-//             strcat(affichagePlateau, "║ ");
-//             //printf("%d║ ", plateau[i]);
-//         } else {
-//             strcat(affichagePlateau, plateau[i]);
-//             strcat(affichagePlateau, " ║ ");
-//             //printf("%d ║ ", plateau[i]);
-//         }
+    /*
+     printf("\n");
+
+     printf("\n\t\t\t\x1b[90m  1   2   3   4   5   6\x1b[0m\n");
+     printf("\t\t\t╔═══╦═══╦═══╦═══╦═══╦═══╗\n");
+
+     printf("\033[31mJoueur 1\x1b[0m : \x1b[32m\x1b[1m%d\x1b[0m pts\t║ ", scoreJoueur1);
+     */
+
+    for (int i = 0; i < 6; i++){
+        itoa(plateau[i], casePlateau, 10);
+        if (plateau[i] >= 10) {
         
-//     }
+            strcat(affichagePlateau, casePlateau);
+            strcat(affichagePlateau, "║ ");
+            //printf("%d║ ", plateau[i]);
+        } else {
+            strcat(affichagePlateau, casePlateau);
+            strcat(affichagePlateau, " ║ ");
+            //printf("%d ║ ", plateau[i]);
+        }
+        
+    }
+    //printf("TEST N°4 %s", affichagePlateau);
 
-//     strcat(affichagePlateau, "\n\t\t\t╠═══╬═══╬═══╬═══╬═══╬═══╣\n\033[34mJoueur 2\x1b[0m : \x1b[32m\x1b[1m");
+    strcat(affichagePlateau, "\n\t\t\t╠═══╬═══╬═══╬═══╬═══╬═══╣\n\033[34mJoueur 2\x1b[0m : \x1b[32m\x1b[1m");
 
-//     strcat(affichagePlateau, scoreJoueur2);
-//     strcat(affichagePlateau, "\x1b[0m pts\t║ ");
-    
-//     //printf("\n\t\t\t╠═══╬═══╬═══╬═══╬═══╬═══╣\n");
+    strcat(affichagePlateau, scoreJ2);
+    strcat(affichagePlateau, "\x1b[0m pts\t║ ");
 
-//     //printf("\033[34mJoueur 2\x1b[0m : \x1b[32m\x1b[1m%d\x1b[0m pts\t║ ", scoreJoueur2);
-//     for (int i = 11; i >= 6; i--)
-//     {
-//         if (plateau[i] >= 10) {
-//             strcat(affichagePlateau, plateau[i]);
-//             strcat(affichagePlateau, "║ ");
-//             //printf("%d║ ", plateau[i]);
-//         } else {
-//             strcat(affichagePlateau, plateau[i]);
-//             strcat(affichagePlateau, " ║ ");
-//             //printf("%d ║ ", plateau[i]);
-//         }
-//     }
+    //printf("\n\t\t\t╠═══╬═══╬═══╬═══╬═══╬═══╣\n");
 
-//     strcat(affichagePlateau, "\n\t\t\t╚═══╩═══╩═══╩═══╩═══╩═══╝\n");
-//     //printf("\n");
-//     //printf("\t\t\t╚═══╩═══╩═══╩═══╩═══╩═══╝\n");
-//     printf("%s", affichagePlateau);
-    send(*sock, "putain de merde", strlen("putain de merde"), 0);
+    //printf("\033[34mJoueur 2\x1b[0m : \x1b[32m\x1b[1m%d\x1b[0m pts\t║ ", scoreJoueur2);
+    for (int i = 11; i >= 6; i--){
+    itoa(plateau[i], casePlateau, 10);
+    if (plateau[i] >= 10) {
+        strcat(affichagePlateau, casePlateau);
+        strcat(affichagePlateau, "║ ");
+        //printf("%d║ ", plateau[i]);
+    } else {
+        strcat(affichagePlateau, casePlateau);
+        strcat(affichagePlateau, " ║ ");
+        //printf("%d ║ ", plateau[i]);
+    }
+    }
+
+    strcat(affichagePlateau, "\n\t\t\t╚═══╩═══╩═══╩═══╩═══╩═══╝\n");
+    //printf("\n");
+    //printf("\t\t\t╚═══╩═══╩═══╩═══╩═══╩═══╝\n");
+    //printf("%s", affichagePlateau);
+    send(*sock, affichagePlateau, strlen(affichagePlateau), 0);
     //send(*sock, affichagePlateau, strlen(affichagePlateau), 0);
 }
 
