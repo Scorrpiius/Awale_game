@@ -12,6 +12,7 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <stdbool.h>
+#include <pthread.h>
 #include <time.h>
 
 typedef struct Joueur
@@ -21,6 +22,8 @@ typedef struct Joueur
   int connecte;
   char biographie[1000];
   int nbVictoires;
+  int sock;
+  char * demandeurDeDefi;
 
 } Joueur;
 
@@ -172,12 +175,217 @@ void updateListeJoueur(int indiceJoueur, Joueur j)
   fclose(fic);
 }
 
+
+void app (int scomm){
+  char c;
+  Joueur j;
+
+  int validitePseudo;
+  /* traiter la communication */
+
+  bool joueurNonValide = true;
+  while (joueurNonValide)
+  {
+    // demander pseudo à joueur
+    char requestPseudo[] = "Veuillez entrer votre pseudo, svp.";
+
+    send(scomm, requestPseudo, strlen(requestPseudo), 0);
+
+    // recevoir le pseudo de notre cher client
+    char pseudoInput[100];
+    int indice = 0;
+    // printf("%s Pseudo reçu : ", getHeure());
+    while (1)
+    {
+
+      read(scomm, &c, 1);
+      // printf("%c", c);
+      if (c == '\n')
+      {
+        break;
+      }
+      // enregistrer le pseudo
+      pseudoInput[indice] = c;
+      indice++;
+    }
+    pseudoInput[indice] = '\0';
+    printf("%s Pseudo reçu : \x1b[1m\"%s\"\x1b[0m\n", getHeure(), pseudoInput);
+
+    lireListeJoueur(listeJoueurs);
+    validitePseudo = joueurExistant(pseudoInput);
+
+    // Cas 1 : joueur non existant -> on créée un nouveau joueur
+    if (validitePseudo == -2)
+    {
+      char requestValidation[] = "Votre pseudo est : ";
+
+      // creation d'un joueur
+      j.connecte = 1;
+      strcpy(j.biographie, "Votre biographie est vide. Allez la remplir ! ");
+      j.occupe = false;
+      j.nbVictoires = 0;
+      strcpy(j.pseudo, pseudoInput);
+      strcat(requestValidation, j.pseudo);
+
+      printf("%s Ajout du joueur \x1b[1m\"%s\"\x1b[0m dans la base de données\n", getHeure(), j.pseudo);
+      ecrireListeJoueur(j);
+
+      printf("%s Connexion acceptée : \x1b[1m\"%s\"\x1b[0m\n", getHeure(), j.pseudo);
+      // On notifie le client d'un code de succès (1)
+      char c = '1';
+      write(scomm, &c, 1);
+      validitePseudo = nbJoueurs;
+      joueurNonValide = false;
+    }
+    // Cas 2 : joueur existant et connecté -> on refuse la connexion
+    else if (validitePseudo == -1)
+    {
+      printf("%s Connexion refusée : le joueur \x1b[1m\"%s\"\x1b[0m est déjà connecté\n", getHeure(), pseudoInput);
+      // On notifie le client d'un code d'erreur (0)
+      char c = '0';
+      write(scomm, &c, 1);
+    }
+    // Cas 3 : joueur existant et déconnecté -> on accepte la connexion
+    else
+    {
+      j = listeJoueurs[validitePseudo];
+      j.connecte = 1;
+
+      printf("%s Connexion acceptée : \x1b[1m\"%s\"\x1b[0m\n", getHeure(), j.pseudo);
+      // On notifie le client d'un code de succès (1)
+      char c = '1';
+      write(scomm, &c, 1);
+
+      updateListeJoueur(validitePseudo, j);
+      joueurNonValide = false;
+    }
+  }
+
+
+  // On remet à jour la liste des joueurs avec les potentielles modifications (ajout de joueur ou joueur connecté)
+  lireListeJoueur(listeJoueurs);
+  bool joueurSurMenu = true;
+  while (joueurSurMenu)
+  {
+    char requestMenu[200] = "--------------- Bonjour \x1b[1m";
+    strcat(requestMenu, j.pseudo);
+    strcat(requestMenu, "\x1b[0m ---------------\n \t1: Défier un joueur \n\t2: Voir son profil \n\t3: Modifer sa biographie \n\t4: Déconnexion\n\0");
+    send(scomm, requestMenu, strlen(requestMenu), 0);
+    
+    
+    char reponse;
+    char c;
+    while (1)
+    {
+
+      read(scomm, &c, 1);
+      if (c == '\n')
+      {
+        break;
+      }
+      reponse = c;
+
+    }
+
+
+    if (reponse == '1')
+    {
+      lireListeJoueur(listeJoueurs);
+      char request[200] = "Liste des joueurs connectés : \n";
+      for(int i = 0; i< nbJoueurs; i++){
+        if(listeJoueurs[i].connecte == 1 && strcmp(listeJoueurs[i].pseudo,j.pseudo) != 0)
+        {
+          strcat(request, listeJoueurs[i].pseudo);
+          strcat(request, "\n");
+        }
+      }
+      strcat(request, "Entrez le pseudo du joueur que vous souhaitez défier (0 pour revenir au menu) : \n");
+      send(scomm, request, strlen(request), 0);
+
+      //lecture du pseudo ou du retour menu
+      char pseudoDefiChoisi[100];
+      int indice = 0;
+      while (1)
+      {
+
+        read(scomm, &c, 1);
+        if (c == '\n')
+        {
+          break;
+        }
+        pseudoDefiChoisi[indice] = c;
+        indice++;
+
+      }
+      if(pseudoDefiChoisi[0] == '0'){
+          continue;
+      }
+
+      int i;
+      for(i = 0; i<nbJoueurs; i++){
+        if(strcmp(pseudoDefiChoisi, listeJoueurs[i].pseudo) == 0){
+          if(listeJoueurs[i].demandeurDeDefi != NULL){
+              strcpy(listeJoueurs[i].demandeurDeDefi,j.pseudo);
+          }
+          
+           break;
+        }
+        
+
+
+      }
+      if (i == nbJoueurs -1){
+        char buffer[100] = "Le joueur n'existe pas";
+        send(scomm, request, strlen(request), 0);
+      }
+      
+
+      
+
+
+
+
+    
+    }else if (reponse == '3')
+    {
+      char request[100] = "Entrez votre nouvelle biographie : \n";
+      send(scomm, request, strlen(request), 0);
+      
+      int indice = 0;
+      char buffer[100];
+      while (1)
+      {
+        read(scomm, &c, 1);
+        if (c == '\n')
+        {
+          break;
+        }
+        // enregistrer le pseudo
+        buffer[indice] = c;
+        indice++;
+      }
+      buffer[indice] = '\0';
+      strcpy(j.biographie, buffer);
+      updateListeJoueur(validitePseudo, j);
+    }else if (reponse == '4')
+    {
+      joueurSurMenu = false;
+      j.connecte = 0;
+      updateListeJoueur(validitePseudo, j);
+    }
+  }
+  printf("%s Le joueur \x1b[1m\"%s\"\x1b[0m s'est deconnecté\n", getHeure(), j.pseudo);
+
+  close(scomm);
+  exit(0); /* on force la terminaison du fils */
+
+}
+
+
 int main(int argc, char **argv)
 {
   char datas[] = "hello\n";
   int sockfd, scomm, clilen, chilpid, ok, nleft, nbwriten;
-  char c;
-  int pid;
   struct sockaddr_in cli_addr, serv_addr;
 
   if (argc != 2)
@@ -218,172 +426,8 @@ int main(int argc, char **argv)
 
     scomm = accept(sockfd, NULL, NULL);
     printf("%s Nouvelle connexion reçue\n", getHeure());
-    pid = fork();
-    if (pid == 0) /* c’est le fils */
-    {
-      Joueur j;
-      close(sockfd); /* socket inutile pour le fils */
-      int validitePseudo;
-      /* traiter la communication */
-
-      bool joueurNonValide = true;
-      while (joueurNonValide)
-      {
-        // demander pseudo à joueur
-        char requestPseudo[] = "Veuillez entrer votre pseudo, svp.";
-
-        send(scomm, requestPseudo, strlen(requestPseudo), 0);
-
-        // recevoir le pseudo de notre cher client
-        char pseudoInput[100];
-        int indice = 0;
-        // printf("%s Pseudo reçu : ", getHeure());
-        while (1)
-        {
-
-          read(scomm, &c, 1);
-          // printf("%c", c);
-          if (c == '\n')
-          {
-            break;
-          }
-          // enregistrer le pseudo
-          pseudoInput[indice] = c;
-          indice++;
-        }
-        pseudoInput[indice] = '\0';
-        printf("%s Pseudo reçu : \x1b[1m\"%s\"\x1b[0m\n", getHeure(), pseudoInput);
-
-        lireListeJoueur(listeJoueurs);
-        validitePseudo = joueurExistant(pseudoInput);
-
-        // Cas 1 : joueur non existant -> on créée un nouveau joueur
-        if (validitePseudo == -2)
-        {
-          char requestValidation[] = "Votre pseudo est : ";
-
-          // creation d'un joueur
-          j.connecte = 1;
-          strcpy(j.biographie, "Votre biographie est vide. Allez la remplir ! ");
-          j.occupe = false;
-          j.nbVictoires = 0;
-          strcpy(j.pseudo, pseudoInput);
-          strcat(requestValidation, j.pseudo);
-
-          printf("%s Ajout du joueur \x1b[1m\"%s\"\x1b[0m dans la base de données\n", getHeure(), j.pseudo);
-          ecrireListeJoueur(j);
-
-          printf("%s Connexion acceptée : \x1b[1m\"%s\"\x1b[0m\n", getHeure(), j.pseudo);
-          // On notifie le client d'un code de succès (1)
-          char c = '1';
-          write(scomm, &c, 1);
-          validitePseudo = nbJoueurs;
-          joueurNonValide = false;
-        }
-        // Cas 2 : joueur existant et connecté -> on refuse la connexion
-        else if (validitePseudo == -1)
-        {
-          printf("%s Connexion refusée : le joueur \x1b[1m\"%s\"\x1b[0m est déjà connecté\n", getHeure(), pseudoInput);
-          // On notifie le client d'un code d'erreur (0)
-          char c = '0';
-          write(scomm, &c, 1);
-        }
-        // Cas 3 : joueur existant et déconnecté -> on accepte la connexion
-        else
-        {
-          j = listeJoueurs[validitePseudo];
-          j.connecte = 1;
-
-          printf("%s Connexion acceptée : \x1b[1m\"%s\"\x1b[0m\n", getHeure(), j.pseudo);
-          // On notifie le client d'un code de succès (1)
-          char c = '1';
-          write(scomm, &c, 1);
-
-          updateListeJoueur(validitePseudo, j);
-          joueurNonValide = false;
-        }
-      }
-
-
-      // On remet à jour la liste des joueurs avec les potentielles modifications (ajout de joueur ou joueur connecté)
-      lireListeJoueur(listeJoueurs);
-      bool joueurSurMenu = true;
-      while (joueurSurMenu)
-      {
-        char requestMenu[200] = "--------------- Bonjour \x1b[1m";
-        strcat(requestMenu, j.pseudo);
-        strcat(requestMenu, "\x1b[0m ---------------\n \t1: Défier un joueur \n\t2: Voir son profil \n\t3: Modifer sa biographie \n\t4: Déconnexion\n\0");
-        send(scomm, requestMenu, strlen(requestMenu), 0);
-        
-        
-        char reponse;
-        char c;
-        while (1)
-        {
-
-          read(scomm, &c, 1);
-          // printf("%c", c);
-          if (c == '\n')
-          {
-            break;
-          }
-          reponse = c;
-          // enregistrer le pseudo
-
-        }
-
-
-        if (reponse == '1')
-        {
-          lireListeJoueur(listeJoueurs);
-          char request[200] = "Liste des joueurs connectés : \n";
-          for(int i = 0; i< nbJoueurs; i++){
-            if(listeJoueurs[i].connecte == 1 && strcmp(listeJoueurs[i].pseudo,j.pseudo) != 0)
-            {
-              strcat(requestMenu, listeJoueurs[i].pseudo);
-              strcat(requestMenu, "\n");
-            }
-          }
-          send(scomm, requestMenu, strlen(requestMenu), 0);
-
-        
-        }else if (reponse == '3')
-        {
-          char request[100] = "Entrez votre nouvelle biographie : \n";
-          send(scomm, request, strlen(request), 0);
-          
-          int indice = 0;
-          char buffer[100];
-          while (1)
-          {
-            read(scomm, &c, 1);
-            if (c == '\n')
-            {
-              break;
-            }
-            // enregistrer le pseudo
-            buffer[indice] = c;
-            indice++;
-          }
-          buffer[indice] = '\0';
-          strcpy(j.biographie, buffer);
-          updateListeJoueur(validitePseudo, j);
-        }else if (reponse == '4')
-        {
-          joueurSurMenu = false;
-          j.connecte = 0;
-          updateListeJoueur(validitePseudo, j);
-        }
-      }
-      printf("%s Le joueur \x1b[1m\"%s\"\x1b[0m s'est deconnecté\n", getHeure(), j.pseudo);
-
-      close(scomm);
-      exit(0); /* on force la terminaison du fils */
-    }
-    else /* c’est le pere */
-    {
-      close(scomm); /* socket inutile pour le pere */
-    }
+    pthread_t t_id;
+    int r = pthread_create(&t_id, NULL, app, scomm);
   }
 
   return 1;

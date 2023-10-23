@@ -1,7 +1,6 @@
 /* Client pour les sockets
  *    socket_client ip_server port
  */
-
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -26,6 +25,7 @@ char lecture(int * sockfd){
     retour = c;
     
   }
+  return retour;
 }
 void affichage(int * sockfd, char * buffer){
   int i = recv(*sockfd, buffer, BUFSIZE, 0); 
@@ -93,9 +93,12 @@ int main(int argc, char** argv )
     affichage(&sockfd, buffer);
     c=lecture(&sockfd);
 
-
       if(c == '1'){
         affichage(&sockfd, buffer);
+        char rep = lecture(&sockfd);
+        if (rep == '0'){
+          continue;
+        }
       }else if(c == '3'){
         affichage(&sockfd, buffer);
         lecture(&sockfd);
