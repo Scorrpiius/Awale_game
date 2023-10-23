@@ -36,6 +36,7 @@ typedef struct Partie
   int scoreJoueur1;
   int scoreJoueur2;
   int tourJoueur;
+  pthread_mutex_t mutex;
 
 } Partie;
 
@@ -51,9 +52,18 @@ void initPartie(char* pseudo1, char* pseudo2){
   initPlateau(&p.scoreJoueur1, &p.scoreJoueur2, p.plateau);
 
   //tour du premier joueur au hasard
-  int tourJoueur = (rand() %2) +1;
+  
+  int tourJoueur = (rand() % 100);
+  if (tourJoueur > 50) {
+    p.tourJoueur = 1;
+  } else {
+    p.tourJoueur = 2;
+  }
+
+  //printf("TEST RAND : %d\n", tourJoueur);
   listePartiesEnCours[nbPartiesEnCours] = p;
   nbPartiesEnCours++;
+  //printf("DEBUG PARTIE : %s / %s\n", p.pseudoJoueur1, p.pseudoJoueur2);
 }
 
 void jouerPartie(Joueur * j, int *sockfd){
@@ -82,20 +92,20 @@ void jouerPartie(Joueur * j, int *sockfd){
       }
     }
   }
-  printf("TEST_0\n");
+  printf("TEST_0 %s\n", j->pseudo);
   if(p->tourJoueur == numJoueur){
-    printf("TEST_1\n");
+    printf("TEST_1 %s\n", j->pseudo);
     char request[100] = "La partie commence ! \n C'est à votre tour ! \n\0";
     send(*sockfd, request, strlen(request), 0);
   }else{
-    printf("TEST_2\n");
+    printf("TEST_2 %s\n", j->pseudo);
     char request[100] = "La partie commence ! \n C'est au tour de votre adversaire ! \n\0";
     send(*sockfd, request, strlen(request), 0);
   }
 
   bool test = true;
   while(test){
-    afficherPlateau(p->plateau);
+    afficherPlateau(p->plateau, sockfd, p->scoreJoueur1, p->scoreJoueur2);
     test = false;
   }
 }
@@ -406,22 +416,23 @@ void app (int scomm){
           if(strcmp(pseudoDefiChoisi, listeJoueurs[i].pseudo) == 0){
             if(strcmp(listeJoueurs[i].demandeurDeDefi, "\0")==0){
                 strcpy(listeJoueurs[i].demandeurDeDefi,j->pseudo);
-                char buffer[100] = "Votre demande a bien été envoyée \n";
-                send(scomm, buffer, strlen(buffer), 0);
+                /*char buffer[100] = "Votre demande a bien été envoyée \n\0";
+                send(scomm, buffer, strlen(buffer), 0);*/
                 adversaire = &listeJoueurs[i];
                 demandeEnvoye = '1';
                 write(scomm, &demandeEnvoye, 1);
             }else{
-              char buffer[100] = "Le joueur est déjà défié...\n";
-              send(scomm, buffer, strlen(buffer), 0);
+              /*char buffer[100] = "Le joueur est déjà défié...\n\0";
+              send(scomm, buffer, strlen(buffer), 0);*/
               write(scomm, &demandeEnvoye, 1);
             }
             break;
           }
         }
         if (i == nbJoueurs){
-          char buffer[100] = "Le joueur n'existe pas";
-          send(scomm, buffer, strlen(buffer), 0);
+          /*char buffer[100] = "Le joueur n'existe pas";
+          send(scomm, buffer, strlen(buffer), 0);*/
+          demandeEnvoye = '2';
           write(scomm, &demandeEnvoye, 1);
         }
 
@@ -429,13 +440,13 @@ void app (int scomm){
           while(strcmp(adversaire->demandeurDeDefi, "\0") != 0 && adversaire->occupe == false){ }
           if(strcmp(adversaire->demandeurDeDefi, "\0") == 0){
             char refus = '0';
-            char buffer[100] = " Le joueur a refusé votre demande...\n\0";
-            send(scomm, buffer, strlen(buffer), 0);
+            /*char buffer[100] = " Le joueur a refusé votre demande...\n\0";
+            send(scomm, buffer, strlen(buffer), 0);*/
             write(scomm, &refus, 1);
           }else{
             char accepte = '1';
-            char buffer[100] = " Le joueur a accepté votre demande, la partie va commencer !\n\0";
-            send(scomm, buffer, strlen(buffer), 0);
+            /*char buffer[100] = " Le joueur a accepté votre demande, la partie va commencer !\n\0";
+            send(scomm, buffer, strlen(buffer), 0);*/
             write(scomm, &accepte, 1);
             j->occupe = true; 
             initPartie(j->pseudo, adversaire->pseudo);

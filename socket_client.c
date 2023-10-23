@@ -106,19 +106,26 @@ int main(int argc, char** argv )
           continue;
         }
 
-        affichage(&sockfd, buffer);
+        //affichage(&sockfd, buffer);
         char c;
         read(sockfd,&c,1);
 
         if(c == '1'){
-
-          affichage(&sockfd, buffer);
+          printf("Votre demande a bien été envoyée \n");
+          //affichage(&sockfd, buffer);
           char reponseDefi;
           read(sockfd,&reponseDefi,1);
 
           if(reponseDefi == '1'){
+            printf("Le joueur a accepté votre demande, la partie va commencer !\n");
             jouerPartie(&sockfd, buffer);
+          } else {
+            printf("Le joueur a pris peur et a refusé votre demande...\n");
           }
+        } else if (c == '0') {
+          printf("Le joueur est déjà défié...\n");
+        } else {
+          printf("Le joueur n'existe pas...\n");
         }
       }else if(c == '3'){
 
@@ -130,8 +137,9 @@ int main(int argc, char** argv )
         clientConnecte = false;
 
       }else if(c == 'y'){
-        
+
         jouerPartie(&sockfd, buffer);
+        
       }
     
   }
