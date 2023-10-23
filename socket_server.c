@@ -299,14 +299,21 @@ void app (int scomm){
     if (validitePseudo == -2)
     {
       char requestValidation[] = "Votre pseudo est : ";
+      
+      j = (Joueur*)malloc(sizeof(Joueur));
 
       // creation d'un joueur
+      printf("bien rentré1\n");
       j->connecte = 1;
+      printf("bien rentré2\n");
       strcpy(j->biographie, "Votre biographie est vide. Allez la remplir ! ");
       j->occupe = false;
+      printf("bien rentré3\n");
       j->nbVictoires = 0;
       strcpy(j->pseudo, pseudoInput);
+      printf("bien rentré4\n");
       strcat(requestValidation, j->pseudo);
+      
 
       printf("%s Ajout du joueur \x1b[1m\"%s\"\x1b[0m dans la base de données\n", getHeure(), j->pseudo);
       ecrireListeJoueur(j);
