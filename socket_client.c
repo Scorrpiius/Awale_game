@@ -101,7 +101,7 @@ int main(int argc, char** argv )
         }
         affichage(&sockfd, buffer);
         char c;
-        read(*sockfd,&c,1);
+        read(sockfd,&c,1);
         if(c == '1'){
           affichage(&sockfd, buffer);
         }
