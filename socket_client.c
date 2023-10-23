@@ -99,10 +99,17 @@ int main(int argc, char** argv )
         if (rep == '0'){
           continue;
         }
+        affichage(&sockfd, buffer);
+        char c;
+        read(*sockfd,&c,1);
+        if(c == '1'){
+          affichage(&sockfd, buffer);
+        }
       }else if(c == '3'){
         affichage(&sockfd, buffer);
         lecture(&sockfd);
-      }else if(c == '4'){
+      }
+      else if(c == '5'){
         clientConnecte = false;
       }
     
