@@ -45,6 +45,24 @@ Partie listePartiesEnCours[100];
 int nbPartiesEnCours;
 int nbJoueurs;
 
+char *getHeure()
+{
+    time_t rawtime;
+    struct tm *timeinfo;
+    time(&rawtime);
+    timeinfo = localtime(&rawtime);
+
+    char *buffer = (char *)malloc(21); // "[\x1b[33mHH:MM:SS\x1b[0m]\0" requiert 21 caractères
+    if (buffer == NULL) {
+        perror("Erreur d'allocation mémoire");
+        exit(1);
+    }
+
+    snprintf(buffer, 21, "\x1b[33m[%.2d:%.2d:%.2d]\x1b[0m", timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
+
+    return buffer;
+}
+
 void initPartie(char* pseudo1, char* pseudo2){
   Partie p;
   strcpy(p.pseudoJoueur1, pseudo1);
@@ -52,17 +70,13 @@ void initPartie(char* pseudo1, char* pseudo2){
   initPlateau(&p.scoreJoueur1, &p.scoreJoueur2, p.plateau);
 
   //tour du premier joueur au hasard
-  
-  int tourJoueur = (rand() % 100);
-  if (tourJoueur > 50) {
-    p.tourJoueur = 1;
-  } else {
-    p.tourJoueur = 2;
-  }
+  srand(time(NULL));
+  p.tourJoueur = rand() % 2 + 1;
 
   //printf("TEST RAND : %d\n", tourJoueur);
   listePartiesEnCours[nbPartiesEnCours] = p;
   nbPartiesEnCours++;
+  printf("%s Début d'une nouvelle partie entre \x1b[1m\"%s\"\x1b[0m et \x1b[1m\"%s\"\x1b[0m\n", getHeure(), p.pseudoJoueur1, p.pseudoJoueur2);
   //printf("DEBUG PARTIE : %s / %s\n", p.pseudoJoueur1, p.pseudoJoueur2);
 }
 
@@ -123,7 +137,7 @@ void jouerPartie(Joueur * j, int *sockfd){
     //send(*sockfd, request, strlen(request), 0);
   }
 
-  printf("TOUR JOUEUR DEBUT %d\n", p->tourJoueur);
+  //printf("TOUR JOUEUR DEBUT %d\n", p->tourJoueur);
   bool finDuJeu = false;
   while(!finDuJeu){
     //affichage du plateau une fois que l'on a joué
@@ -141,52 +155,25 @@ void jouerPartie(Joueur * j, int *sockfd){
     int valide;
     do{
       char lectureCoup =  lectureMessageClient(sockfd);
-      printf("Test lectureCoup : %c\n",lectureCoup);
       coup = atoi(&lectureCoup);
-      printf("Test coup : %d\n",coup);
 
       //verification du coup 
       valide = coupValide(p->plateau, coup, numJoueur); 
-      printf("Test valide : %d\n",valide);
       char valideTransmis[2];
       itoa(valide, valideTransmis, 10);
-      printf("Test valideTransmis : %c\n",valideTransmis[0]);
       send(*sockfd, valideTransmis, strlen(valideTransmis), 0);
     }while(valide != 1);
 
     //le coup est joué, le jeu peut être terminé, sinon le tour est changé
     jouerCoup(p->plateau, coup, numJoueur, &p->scoreJoueur1, &p->scoreJoueur2);
-    printf("Avant FinDeJeu\n");
     finDuJeu = finDeJeu(p->plateau, numJoueur, p->scoreJoueur1, p->scoreJoueur2);
-    printf("Après FinDeJeu\n");
     p->tourJoueur = (p->tourJoueur == 1) ? 2 : 1;
-    printf("NOUVEAU TOUR : %d\n", p->tourJoueur);
 
 
   }
   //la partie est finie
   finDePartie(p->scoreJoueur1, p->scoreJoueur2);
   
-}
-
-
-char *getHeure()
-{
-  time_t rawtime;
-  struct tm *timeinfo;
-  time(&rawtime);
-  timeinfo = localtime(&rawtime);
-
-  char *buffer = (char *)malloc(11); // "hh:mm\0" requires 6 characters
-  if (buffer == NULL)
-  {
-    perror("Memory allocation error");
-    exit(1);
-  }
-
-  strftime(buffer, 11, "[%H:%M:%S]", timeinfo);
-
-  return buffer;
 }
 
 // la méthode renvoie -2 si le joueur n'existe pas;
@@ -357,7 +344,7 @@ void app (int scomm){
     // Cas 1 : joueur non existant -> on créée un nouveau joueur
     if (validitePseudo == -2)
     {
-      char requestValidation[] = "Votre pseudo est : ";
+      //char requestValidation[] = "Votre pseudo est :\0";
       
       j = (Joueur*)malloc(sizeof(Joueur));
 
@@ -371,7 +358,7 @@ void app (int scomm){
       j->nbVictoires = 0;
       strcpy(j->pseudo, pseudoInput);
       printf("bien rentré4\n");
-      strcat(requestValidation, j->pseudo);
+      //strcat(requestValidation, j->pseudo);
       
 
       printf("%s Ajout du joueur \x1b[1m\"%s\"\x1b[0m dans la base de données\n", getHeure(), j->pseudo);
@@ -409,11 +396,11 @@ void app (int scomm){
   }
 
 
-  // On remet à jour la liste des joueurs avec les potentielles modifications (ajout de joueur ou joueur connecté)
-  lireListeJoueur(listeJoueurs);
   bool joueurSurMenu = true;
   while (joueurSurMenu)
   {
+      // On remet à jour la liste des joueurs avec les potentielles modifications (ajout de joueur ou joueur connecté)
+      lireListeJoueur(listeJoueurs);
     
       char requestMenu[200] = "\n--------------- Bonjour \x1b[1m";
       strcat(requestMenu, j->pseudo);
@@ -472,9 +459,11 @@ void app (int scomm){
 
         int i;
         char demandeEnvoye = '0';
+        bool joueurTrouveDansListe = false;
         Joueur *adversaire;
         for(i = 0; i<nbJoueurs; i++){
           if(strcmp(pseudoDefiChoisi, listeJoueurs[i].pseudo) == 0){
+            joueurTrouveDansListe = true;
             if(strcmp(listeJoueurs[i].demandeurDeDefi, "\0")==0){
                 strcpy(listeJoueurs[i].demandeurDeDefi,j->pseudo);
                 /*char buffer[100] = "Votre demande a bien été envoyée \n\0";
@@ -490,7 +479,8 @@ void app (int scomm){
             break;
           }
         }
-        if (i == nbJoueurs){
+        if (!joueurTrouveDansListe){
+          printf("rentré au mauvais endoit...\n");
           /*char buffer[100] = "Le joueur n'existe pas";
           send(scomm, buffer, strlen(buffer), 0);*/
           demandeEnvoye = '2';

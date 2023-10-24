@@ -45,12 +45,15 @@ char receptionValidite(int * sockfd){
 
 void jouerPartie(int * sockfd, char * buffer){
   bool finDePartie = false;
+  bool premierTour = true;
   while(!finDePartie){
         //affichage du plateau après notre tour
         //affichage(sockfd, buffer);
       
         //affichage du plateau après le tour de l'adversaire
+        if (!premierTour) printf("\nC'est au tour de l'adversaire, patientez.\n");
         affichage(sockfd, buffer);
+        premierTour = false;
 
         //c'est à notre tour
         //affichage(sockfd, buffer);

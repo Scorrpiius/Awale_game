@@ -130,7 +130,10 @@ void afficherPlateau(int * plateau, int *sock, int scoreJoueur1, int scoreJoueur
     //printf("Je suis entré dans afficahge palrazojrhireoae\n");
     char affichagePlateau[4096]="\n\n\t\t\t\x1b[90m  1   2   3   4   5   6\x1b[0m\n\t\t\t╔═══╦═══╦═══╦═══╦═══╦═══╗\n\033[31m";
     strcat(affichagePlateau, pseudoJoueur1);
-    strcat(affichagePlateau, "\x1b[0m : \t\x1b[32m\x1b[1m");
+
+    // l'affichage est différent si le pseudo d'un joueur est trop petit
+    if((int)strlen(pseudoJoueur1) <= 4) {strcat(affichagePlateau, "\x1b[0m\t: \t\x1b[32m\x1b[1m");}
+    else {strcat(affichagePlateau, "\x1b[0m : \t\x1b[32m\x1b[1m");}
     //printf("TEST N°1 %s", affichagePlateau);
     char scoreJ1[3];
     char scoreJ2[3];
@@ -170,9 +173,11 @@ void afficherPlateau(int * plateau, int *sock, int scoreJoueur1, int scoreJoueur
     }
     //printf("TEST N°4 %s", affichagePlateau);
 
+    // l'affichage est différent si le pseudo d'un joueur est trop petit
     strcat(affichagePlateau, "\n\t\t\t╠═══╬═══╬═══╬═══╬═══╬═══╣\n\033[34m");
     strcat(affichagePlateau, pseudoJoueur2);
-    strcat(affichagePlateau, "\x1b[0m : \t\x1b[32m\x1b[1m");
+    if((int)strlen(pseudoJoueur1) <= 4) {strcat(affichagePlateau, "\x1b[0m\t: \t\x1b[32m\x1b[1m");}
+    else {strcat(affichagePlateau, "\x1b[0m : \t\x1b[32m\x1b[1m");}
 
     strcat(affichagePlateau, scoreJ2);
     strcat(affichagePlateau, "\x1b[0m pts\t║ ");
