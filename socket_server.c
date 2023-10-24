@@ -95,17 +95,17 @@ void jouerPartie(Joueur * j, int *sockfd){
   printf("TEST_0 %s\n", j->pseudo);
   if(p->tourJoueur == numJoueur){
     printf("TEST_1 %s\n", j->pseudo);
-    char request[100] = "La partie commence ! \n C'est à votre tour ! \n\0";
+    char request[100] = "\nLa partie commence : c'est à votre tour ! \n\0";
     send(*sockfd, request, strlen(request), 0);
   }else{
     printf("TEST_2 %s\n", j->pseudo);
-    char request[100] = "La partie commence ! \n C'est au tour de votre adversaire ! \n\0";
+    char request[100] = "\nLa partie commence : c'est au tour de votre adversaire ! \n\0";
     send(*sockfd, request, strlen(request), 0);
   }
 
   bool test = true;
   while(test){
-    afficherPlateau(p->plateau, sockfd, p->scoreJoueur1, p->scoreJoueur2);
+    afficherPlateau(p->plateau, sockfd, p->scoreJoueur1, p->scoreJoueur2, p->pseudoJoueur1, p->pseudoJoueur2);
     test = false;
   }
 }
@@ -229,7 +229,7 @@ void updateListeJoueur(int indiceJoueur, Joueur* j)
 {
   FILE *fic;
 
-  nbJoueurs = 0;
+  //nbJoueurs = 0;
   // ouverture du fic de données CSV
   fic = fopen("liste_joueurs.csv", "r+");
   if (fic == NULL)
@@ -356,15 +356,15 @@ void app (int scomm){
   while (joueurSurMenu)
   {
     
-      char requestMenu[200] = "--------------- Bonjour \x1b[1m";
+      char requestMenu[200] = "\n--------------- Bonjour \x1b[1m";
       strcat(requestMenu, j->pseudo);
       if(strcmp(j->demandeurDeDefi, "\0") != 0){
-        strcat(requestMenu, "\x1b[0m ---------------\n \tLe joueur ");
+        strcat(requestMenu, "\x1b[0m ---------------\n\nLe joueur ");
         strcat(requestMenu, j->demandeurDeDefi);
-        strcat(requestMenu, " vous a défié !!! (Appuyez sur y pour accepter le défi, n pour refuser) ");
+        strcat(requestMenu, " vous a défié ! (y pour accepter / n pour refuser) ");
         send(scomm, requestMenu, strlen(requestMenu), 0);
       }else{
-        strcat(requestMenu, "\x1b[0m ---------------\n \t1: Défier un joueur \n\t2: Voir son profil \n\t3: Modifer sa biographie \n\t4: Rafraichir le menu\n\t5: Déconnexion\n\0");
+        strcat(requestMenu, "\x1b[0m ---------------\n\n \t1: Défier un joueur \n\t2: Voir son profil \n\t3: Modifer sa biographie \n\t4: Rafraichir le menu\n\t5: Déconnexion\n\0");
         send(scomm, requestMenu, strlen(requestMenu), 0);
       }
 
@@ -386,15 +386,22 @@ void app (int scomm){
       if (reponse == '1')
       {
         lireListeJoueur(listeJoueurs);
-        char request[200] = "Liste des joueurs connectés : \n";
+        char request[200] = "Liste des joueurs connectés :\n\n";
+        bool joueurTrouve = false;
         for(int i = 0; i< nbJoueurs; i++){
           if(listeJoueurs[i].connecte == 1 && strcmp(listeJoueurs[i].pseudo,j->pseudo) != 0)
           {
+            joueurTrouve = true;
+            strcat(request, "\t");
             strcat(request, listeJoueurs[i].pseudo);
             strcat(request, "\n");
           }
         }
-        strcat(request, "Entrez le pseudo du joueur que vous souhaitez défier (0 pour revenir au menu) : \n");
+        if (!joueurTrouve) {
+          strcat(request, "\tIl n'y a aucun autre joueur connecté.\n");
+        }
+
+        strcat(request, "\nEntrez le pseudo du joueur que vous souhaitez défier (0 pour revenir au menu) :");
         send(scomm, request, strlen(request), 0);
 
         //lecture du pseudo ou du retour menu
@@ -545,10 +552,18 @@ int main(int argc, char **argv)
   /* petit initialisation */
   listen(sockfd, 1);
 
+  /* On met 'connecte' à 0 à tous les joueurs dans le .csv par précaution
+  (il ne peut pas y avoir de joueur connecté avant le démarrage du serveur) */
+  lireListeJoueur(listeJoueurs);
+  for (int i = 0 ; i < nbJoueurs ; i++) {
+    listeJoueurs[i].connecte = 0;
+    updateListeJoueur(i, &listeJoueurs[i]);
+  }
+
   printf("%s Serveur opérationnel !\n", getHeure());
   while (1)
   {
-
+    // Nouvelle connexion -> nouveau thread
     scomm = accept(sockfd, NULL, NULL);
     printf("%s Nouvelle connexion reçue\n", getHeure());
     pthread_t t_id;

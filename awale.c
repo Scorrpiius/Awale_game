@@ -125,10 +125,12 @@ int coupValide(int coup, int joueur){
     
 }  
 
-void afficherPlateau(int * plateau, int *sock, int scoreJoueur1, int scoreJoueur2)
+void afficherPlateau(int * plateau, int *sock, int scoreJoueur1, int scoreJoueur2, char * pseudoJoueur1, char * pseudoJoueur2)
 {
     //printf("Je suis entré dans afficahge palrazojrhireoae\n");
-    char affichagePlateau[4096]="\n\n\t\t\t\x1b[90m  1   2   3   4   5   6\x1b[0m\n\t\t\t╔═══╦═══╦═══╦═══╦═══╦═══╗\n\033[31mJoueur 1\x1b[0m : \x1b[32m\x1b[1m";
+    char affichagePlateau[4096]="\n\n\t\t\t\x1b[90m  1   2   3   4   5   6\x1b[0m\n\t\t\t╔═══╦═══╦═══╦═══╦═══╦═══╗\n\033[31m";
+    strcat(affichagePlateau, pseudoJoueur1);
+    strcat(affichagePlateau, "\x1b[0m : \t\x1b[32m\x1b[1m");
     //printf("TEST N°1 %s", affichagePlateau);
     char scoreJ1[2];
     char scoreJ2[2];
@@ -168,7 +170,9 @@ void afficherPlateau(int * plateau, int *sock, int scoreJoueur1, int scoreJoueur
     }
     //printf("TEST N°4 %s", affichagePlateau);
 
-    strcat(affichagePlateau, "\n\t\t\t╠═══╬═══╬═══╬═══╬═══╬═══╣\n\033[34mJoueur 2\x1b[0m : \x1b[32m\x1b[1m");
+    strcat(affichagePlateau, "\n\t\t\t╠═══╬═══╬═══╬═══╬═══╬═══╣\n\033[34m");
+    strcat(affichagePlateau, pseudoJoueur2);
+    strcat(affichagePlateau, "\x1b[0m : \t\x1b[32m\x1b[1m");
 
     strcat(affichagePlateau, scoreJ2);
     strcat(affichagePlateau, "\x1b[0m pts\t║ ");

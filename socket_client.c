@@ -60,7 +60,7 @@ int main(int argc, char** argv )
   /*
    *  partie client 
    */
-  printf ("client starting\n");  
+  printf ("Démarrage du client...\n");  
 
   /* initialise la structure de donnee */
   bzero((char*) &serv_addr, sizeof(serv_addr));
@@ -76,7 +76,7 @@ int main(int argc, char** argv )
   if (connect(sockfd,(struct sockaddr*)&serv_addr,sizeof(serv_addr))<0)
     {printf("socket error\n");exit(0);}
     
-  
+  printf ("Client opérationnel !\n\n");
   /* Repete dans le socket tout ce qu'il entend */
   bool accepteParServeur = false;
   while(!accepteParServeur){
@@ -111,21 +111,21 @@ int main(int argc, char** argv )
         read(sockfd,&c,1);
 
         if(c == '1'){
-          printf("Votre demande a bien été envoyée \n");
+          printf("\nVotre demande a bien été envoyée.\n\nEn attente de la réponse du joueur...\n");
           //affichage(&sockfd, buffer);
           char reponseDefi;
           read(sockfd,&reponseDefi,1);
 
           if(reponseDefi == '1'){
-            printf("Le joueur a accepté votre demande, la partie va commencer !\n");
+            printf("\nLe joueur a accepté votre demande, la partie va commencer !\n");
             jouerPartie(&sockfd, buffer);
           } else {
-            printf("Le joueur a pris peur et a refusé votre demande...\n");
+            printf("\nLe joueur a pris peur et a refusé votre demande...\n");
           }
         } else if (c == '0') {
-          printf("Le joueur est déjà défié...\n");
+          printf("\nLe joueur est déjà défié...\n");
         } else {
-          printf("Le joueur n'existe pas...\n");
+          printf("\nLe joueur n'existe pas...\n");
         }
       }else if(c == '3'){
 
