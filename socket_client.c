@@ -44,7 +44,49 @@ char receptionValidite(int * sockfd){
 }
 
 void jouerPartie(int * sockfd, char * buffer){
-  affichage(sockfd, buffer);
+  bool finDePartie = false;
+  while(!finDePartie){
+        //affichage du plateau après notre tour
+        //affichage(sockfd, buffer);
+      
+        //affichage du plateau après le tour de l'adversaire
+        affichage(sockfd, buffer);
+
+        //c'est à notre tour
+        //affichage(sockfd, buffer);
+        printf("C'est à votre tour, entrez votre coup :\n");
+
+        int valide = 0;
+        char validiteCoup[2];
+
+        do{
+            //jouer le coup
+            //printf("Avant coupCarac\n");
+            char coupCarac = lecture(sockfd);
+            //printf("Test coupCarac : %c\n", coupCarac);
+
+            int i = recv(*sockfd, validiteCoup, 2, 0); 
+            if(i>=0){
+                  validiteCoup[i] = '\0';
+            }
+            //printf("Validitecoup : %s\n", validiteCoup);
+
+            valide = atoi(validiteCoup);
+
+            
+              if (valide == 0) {
+                    printf("\n\x1b[31mSaisie invalide. Veuillez saisir un nombre entre 1 et 6.\x1b[0m\n");
+                } else if (valide == 3 ){
+                      printf("\n\x1b[31mVous ne pouvez pas choisir une case vide.\x1b[0m\n");
+                } else if (valide == 2){
+                      printf("\n\x1b[31mVous devez nourrir le joueur adverse.\x1b[0m\n");
+                } else {
+                    break; // Sort de la boucle si la saisie est valide
+                }
+        }while(valide != 1);
+
+  }    
+
 }
 
 int main(int argc, char** argv )
@@ -111,6 +153,7 @@ int main(int argc, char** argv )
         read(sockfd,&c,1);
 
         if(c == '1'){
+          
           printf("\nVotre demande a bien été envoyée.\n\nEn attente de la réponse du joueur...\n");
           //affichage(&sockfd, buffer);
           char reponseDefi;
@@ -127,6 +170,7 @@ int main(int argc, char** argv )
         } else {
           printf("\nLe joueur n'existe pas...\n");
         }
+        
       }else if(c == '3'){
 
         affichage(&sockfd, buffer);

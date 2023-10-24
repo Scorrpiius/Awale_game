@@ -66,12 +66,32 @@ void initPartie(char* pseudo1, char* pseudo2){
   //printf("DEBUG PARTIE : %s / %s\n", p.pseudoJoueur1, p.pseudoJoueur2);
 }
 
+char lectureMessageClient(int * sockfd){
+  //Caractère lu
+  char c;
+  //Caractère retourné par la fonction
+  char retour;
+  while (1)
+    {
+
+      read(*sockfd, &c, 1);
+      // printf("%c", c);
+      if (c == '\n')
+      {
+        break;
+      }
+      retour = c;
+    }
+    return retour;
+}
+
 void jouerPartie(Joueur * j, int *sockfd){
 
-  bool partieTrouvee = false;
+ bool partieTrouvee = false;
   Partie * p;
   int numJoueur;
 
+  //trouver la partie que l'on va jouer
   while(!partieTrouvee){
 
     for(int i = 0; i< nbPartiesEnCours; i++){
@@ -92,22 +112,61 @@ void jouerPartie(Joueur * j, int *sockfd){
       }
     }
   }
-  printf("TEST_0 %s\n", j->pseudo);
+
+
+  //tirage au sort du premier joueur
   if(p->tourJoueur == numJoueur){
-    printf("TEST_1 %s\n", j->pseudo);
     char request[100] = "\nLa partie commence : c'est à votre tour ! \n\0";
-    send(*sockfd, request, strlen(request), 0);
+    //send(*sockfd, request, strlen(request), 0);
   }else{
-    printf("TEST_2 %s\n", j->pseudo);
     char request[100] = "\nLa partie commence : c'est au tour de votre adversaire ! \n\0";
-    send(*sockfd, request, strlen(request), 0);
+    //send(*sockfd, request, strlen(request), 0);
   }
 
-  bool test = true;
-  while(test){
+  printf("TOUR JOUEUR DEBUT %d\n", p->tourJoueur);
+  bool finDuJeu = false;
+  while(!finDuJeu){
+    //affichage du plateau une fois que l'on a joué
+    //afficherPlateau(p->plateau, sockfd, p->scoreJoueur1, p->scoreJoueur2, p->pseudoJoueur1, p->pseudoJoueur2);
+    //joueur en attente
+    while(p->tourJoueur != numJoueur){}
+    //affichage du plateau après le tour de l'adversaire
     afficherPlateau(p->plateau, sockfd, p->scoreJoueur1, p->scoreJoueur2, p->pseudoJoueur1, p->pseudoJoueur2);
-    test = false;
+
+    //char request[100] = "\nC'est à votre tour, entrez votre coup : \n\0";
+    //send(*sockfd, request, strlen(request), 0);
+
+    //le joueur fait son coup
+    int coup;
+    int valide;
+    do{
+      char lectureCoup =  lectureMessageClient(sockfd);
+      printf("Test lectureCoup : %c\n",lectureCoup);
+      coup = atoi(&lectureCoup);
+      printf("Test coup : %d\n",coup);
+
+      //verification du coup 
+      valide = coupValide(p->plateau, coup, numJoueur); 
+      printf("Test valide : %d\n",valide);
+      char valideTransmis[2];
+      itoa(valide, valideTransmis, 10);
+      printf("Test valideTransmis : %c\n",valideTransmis[0]);
+      send(*sockfd, valideTransmis, strlen(valideTransmis), 0);
+    }while(valide != 1);
+
+    //le coup est joué, le jeu peut être terminé, sinon le tour est changé
+    jouerCoup(p->plateau, coup, numJoueur, &p->scoreJoueur1, &p->scoreJoueur2);
+    printf("Avant FinDeJeu\n");
+    finDuJeu = finDeJeu(p->plateau, numJoueur, p->scoreJoueur1, p->scoreJoueur2);
+    printf("Après FinDeJeu\n");
+    p->tourJoueur = (p->tourJoueur == 1) ? 2 : 1;
+    printf("NOUVEAU TOUR : %d\n", p->tourJoueur);
+
+
   }
+  //la partie est finie
+  finDePartie(p->scoreJoueur1, p->scoreJoueur2);
+  
 }
 
 
@@ -368,19 +427,7 @@ void app (int scomm){
         send(scomm, requestMenu, strlen(requestMenu), 0);
       }
 
-      char reponse;
-      char c;
-      while (1)
-      {
-
-        read(scomm, &c, 1);
-        if (c == '\n')
-        {
-          break;
-        }
-        reponse = c;
-
-      }
+      char reponse = lectureMessageClient(&scomm);
 
 
       if (reponse == '1')

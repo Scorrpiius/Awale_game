@@ -65,7 +65,7 @@ char* itoa(int value, char* buffer, int base)
 }
 
 
-int coupValide(int coup, int joueur){
+int coupValide(int * plateau, int coup, int joueur){
 
     if (coup < 1 || coup > 6){
         return MAUVAISE_SAISIE;
@@ -132,8 +132,8 @@ void afficherPlateau(int * plateau, int *sock, int scoreJoueur1, int scoreJoueur
     strcat(affichagePlateau, pseudoJoueur1);
     strcat(affichagePlateau, "\x1b[0m : \t\x1b[32m\x1b[1m");
     //printf("TEST N°1 %s", affichagePlateau);
-    char scoreJ1[2];
-    char scoreJ2[2];
+    char scoreJ1[3];
+    char scoreJ2[3];
     char casePlateau[2];
 
 
@@ -211,7 +211,7 @@ void initPlateau(int* scoreJoueur1, int* scoreJoueur2, int* plateau)
     }
 }
 
-int prendreGraine(int caseFin, int joueur)
+int prendreGraine(int caseFin, int joueur, int * plateau)
 {
     int totalGraines = 0;
     bool verification = false;
@@ -261,7 +261,7 @@ int prendreGraine(int caseFin, int joueur)
     return totalGraines;
 }
 
-void jouerCoup(int coup, int joueur)
+void jouerCoup(int * plateau, int coup, int joueur, int *scoreJoueur1, int *scoreJoueur2)
 {
 
     int nbGraines;
@@ -280,7 +280,7 @@ void jouerCoup(int coup, int joueur)
         }
 
         int caseFin = (nbGraines + coup) % 12;
-        scoreJoueur1 += prendreGraine(caseFin, joueur);
+        *scoreJoueur1 += prendreGraine(caseFin, joueur,plateau);
     }
     else
     {
@@ -298,11 +298,11 @@ void jouerCoup(int coup, int joueur)
         }
 
         int caseFin = (nbGraines + coup) % 12;
-        scoreJoueur2 += prendreGraine(caseFin, joueur);
+        *scoreJoueur2 += prendreGraine(caseFin, joueur, plateau);
     }
 }
 
-bool finDeJeu(int joueur)
+bool finDeJeu(int* plateau, int joueur, int scoreJoueur1, int scoreJoueur2)
 {
 
     bool fini = true;
@@ -340,7 +340,7 @@ bool finDeJeu(int joueur)
     return fini;
 }
 
-void finDePartie()
+void finDePartie(int scoreJoueur1, int scoreJoueur2)
 {
 
     if (scoreJoueur1 > scoreJoueur2)

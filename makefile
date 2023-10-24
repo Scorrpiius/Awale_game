@@ -1,5 +1,5 @@
 CC = gcc
-CCFLAGS = -w
+CCFLAGS = 
 OBJ = awale.o socket_client.o socket_server.o 
 EXEC = client server
 
