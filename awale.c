@@ -310,28 +310,9 @@ void jouerCoup(int * plateau, int coup, int joueur, int *scoreJoueur1, int *scor
 bool finDeJeu(int* plateau, int joueur, int scoreJoueur1, int scoreJoueur2)
 {
 
-    bool fini = true;
-    if (joueur == 1)
-    {
-        for (int i = 0; i < 5; i++)
-        {
-            if (plateau[i] != 0)
-            {
-                fini = false;
-            }
-        }
-    }
-    else
-    {
-        for (int i = 6; i < 11; i++)
-        {
-            if (plateau[i] != 0)
-            {
-                fini = false;
-            }
-        }
-    }
+    //vrai condition de fin 
 
+    bool fini = false;
     if(scoreJoueur1>=25 || scoreJoueur2 >= 25){
         fini = true;
     }

@@ -47,7 +47,8 @@ void jouerPartie(int * sockfd, char * buffer){
   bool premierTour = true;
   while(!finDePartie){
     /*Affichage du plateau après le tour de l'adversaire*/
-    if (!premierTour){ printf("\nC'est au tour de l'adversaire, patientez.\n"); premierTour = false;}
+    if (!premierTour){ printf("\nC'est au tour de l'adversaire, patientez.\n"); }
+    premierTour = false;
     
     affichageMessageServeur(sockfd, buffer);
     
