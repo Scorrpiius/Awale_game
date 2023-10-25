@@ -63,41 +63,154 @@ char *getHeure()
     return buffer;
 }
 
-/*
-void incrementerVictoires(Joueur * j){
-  FILE * fic = fopen("liste_joueurs.csv", "r+");
-  if(fic == NULL){
-    printf("Erreur dans le csv\n");
-    return;
-  }
-
-  char ligne[1024]; 
-  int positionLigne = -1;
-  while(fgets(ligne, sizeof(ligne), fic) != NULL){
-    char * pseudoDansLigne = strtok(ligne, ";");
-    positionLigne = ftell(fic);
-    printf("Pseudos %s / %s\n", pseudoDansLigne, j->pseudo);
-    if(pseudoDansLigne != NULL && strcmp(pseudoDansLigne, j->pseudo) == 0){
-      char * bioDansLigne = strtok(NULL, ";");
-      char * nbVictoiresLigne = strtok(NULL, ";");
-      char * connecteLigne = strtok(NULL, ";");
-
-      //incrémentation du nombre de victoires
-      int nbVictoires = 5;
-      //atoi(nbVictoiresLigne);
-      //nbVictoires++;
-
-      fseek(fic, -strlen(ligne), SEEK_CUR); // Mettre le curseur au début de la ligne
-      fprintf(fic, "%s;%s;%d;%s;\n", pseudoDansLigne, bioDansLigne, nbVictoires, connecteLigne);
-      break;
+int trouverIndiceCsv(char *pseudo) {
+    FILE *fichierCSV = fopen("liste_joueurs.csv", "r");
+    if (fichierCSV == NULL) {
+        perror("Erreur lors de l'ouverture du fichier");
+        return -1;  // Retourne -1 en cas d'erreur
     }
-    
 
+    char ligne[256];
+    int indice = 0;
+
+    while (fgets(ligne, sizeof(ligne), fichierCSV) != NULL) {
+        char *pseudoDansLigne = strtok(ligne, ";");
+        
+        if (pseudoDansLigne != NULL && strcmp(pseudoDansLigne, pseudo) == 0) {
+            fclose(fichierCSV);
+            return indice;
+        }
+
+        indice++;
+    }
+
+    fclose(fichierCSV);
+    return -1;  // Retourne -1 si le pseudo n'est pas trouvé
+}
+
+// la méthode renvoie -2 si le joueur n'existe pas;
+// l'indice du joueur dans la liste si le joueur a déjà créé son compte et n'est pas connecté ;
+// -1 si un autre joueur est connecté avec le même pseudo
+int joueurExistant(char *pseudoNouveauJoueur)
+{
+
+  for (int i = 0; i < nbJoueurs; i++)
+  {
+    Joueur j = listeJoueurs[i];
+    if (strcmp(pseudoNouveauJoueur, j.pseudo) == 0)
+    {
+      if (j.connecte == 0)
+      {
+        return i;
+      }
+      else
+      {
+        return -1;
+      }
+    }
+  }
+  return -2;
+}
+
+void ecrireListeJoueur(Joueur* j)
+{
+  FILE *fic;
+
+  // ouverture du fic de données CSV
+  int indice = 0;
+  fic = fopen("liste_joueurs.csv", "r+");
+  if (fic == NULL)
+  {
+    printf("Ouverture fic impossible !");
+  }
+  else
+  {
+    fseek(fic, 0, SEEK_END);
+    fprintf(fic, "%s;%s;%d;%d;\n", j->pseudo, j->biographie, j->nbVictoires, j->connecte);
   }
   fclose(fic);
-  printf("Nombre de victoires de %s incrémenté de 1\n", j->pseudo);
+}
 
-}*/
+void lireListeJoueur(Joueur *listeJoueurParam)
+{
+  FILE *fic;
+
+  nbJoueurs = 0;
+  // ouverture du fic de données CSV
+  int indice = 0;
+  fic = fopen("liste_joueurs.csv", "r");
+  if (fic == NULL)
+  {
+    printf("Ouverture fic impossible !");
+  }
+  else
+  {
+    char c;
+    bool fileEnd = false;
+
+    int indice = 0;
+    while (!fileEnd)
+    {
+      char ligne[300];
+      int index = 0;
+      while ((c = fgetc(fic)) != '\n')
+      {
+        ligne[index] = c;
+        index++;
+      }
+      ligne[index] = '\0';
+      char *infosJoueur = strtok(ligne, ";");
+      strcpy(listeJoueurParam[indice].pseudo, infosJoueur);
+      infosJoueur = strtok(NULL, ";");
+      strcpy(listeJoueurParam[indice].biographie, infosJoueur);
+      infosJoueur = strtok(NULL, ";");
+      listeJoueurParam[indice].nbVictoires = atoi(infosJoueur);
+      infosJoueur = strtok(NULL, ";");
+      listeJoueurParam[indice].connecte = atoi(infosJoueur);
+
+      if ((c = fgetc(fic)) == EOF)
+      {
+        fileEnd = true;
+        break;
+      }
+      fseek(fic, -1L, SEEK_CUR);
+      indice++;
+    }
+    nbJoueurs = indice + 1;
+  }
+  fclose(fic);
+}
+
+void updateListeJoueur(int indiceJoueur, Joueur* j)
+{
+  FILE *fic;
+
+  // ouverture du fic de données CSV
+  fic = fopen("liste_joueurs.csv", "r+");
+  if (fic == NULL)
+  {
+    printf("Ouverture fic impossible !");
+  }
+  else
+  {
+    int ligneCourante = -1;
+    char ligne[1024];
+
+    while (fgets(ligne, sizeof(ligne), fic))
+    {
+      ligneCourante++;
+      if (ligneCourante == indiceJoueur)
+      {
+        // Remplace la nième ligne par les données
+        fseek(fic, -strlen(ligne), SEEK_CUR); // Mettre le curseur au début de la ligne
+        fprintf(fic, "%s;%s;%d;%d;", j->pseudo, j->biographie, j->nbVictoires, j->connecte);
+        break;
+      }
+    }
+  }
+  fclose(fic);
+}
+
 
 void initPartie(char* pseudo1, char* pseudo2){
   Partie p;
@@ -240,135 +353,13 @@ void jouerPartie(Joueur * j, int *sockfd){
   //incrémenter le nombre de victoires du gagnant
   if(atoi(&resultat) == numJoueur){
     j->nbVictoires++;
+    listeJoueurs[trouverIndiceCsv(j->pseudo)].nbVictoires++;
+    updateListeJoueur(trouverIndiceCsv(j->pseudo), &listeJoueurs[trouverIndiceCsv(j->pseudo)]);
     //incrementerVictoires(j);
   }
   strcpy(j->demandeurDeDefi,"\0");
   
 }
-
-// la méthode renvoie -2 si le joueur n'existe pas;
-// l'indice du joueur dans la liste si le joueur a déjà créé son compte et n'est pas connecté ;
-// -1 si un autre joueur est connecté avec le même pseudo
-int joueurExistant(char *pseudoNouveauJoueur)
-{
-
-  for (int i = 0; i < nbJoueurs; i++)
-  {
-    Joueur j = listeJoueurs[i];
-    if (strcmp(pseudoNouveauJoueur, j.pseudo) == 0)
-    {
-      if (j.connecte == 0)
-      {
-        return i;
-      }
-      else
-      {
-        return -1;
-      }
-    }
-  }
-  return -2;
-}
-
-void ecrireListeJoueur(Joueur* j)
-{
-  FILE *fic;
-
-  // ouverture du fic de données CSV
-  int indice = 0;
-  fic = fopen("liste_joueurs.csv", "r+");
-  if (fic == NULL)
-  {
-    printf("Ouverture fic impossible !");
-  }
-  else
-  {
-    fseek(fic, 0, SEEK_END);
-    fprintf(fic, "%s;%s;%d;%d;\n", j->pseudo, j->biographie, j->nbVictoires, j->connecte);
-  }
-  fclose(fic);
-}
-
-void lireListeJoueur(Joueur *listeJoueurParam)
-{
-  FILE *fic;
-
-  nbJoueurs = 0;
-  // ouverture du fic de données CSV
-  int indice = 0;
-  fic = fopen("liste_joueurs.csv", "r");
-  if (fic == NULL)
-  {
-    printf("Ouverture fic impossible !");
-  }
-  else
-  {
-    char c;
-    bool fileEnd = false;
-
-    int indice = 0;
-    while (!fileEnd)
-    {
-      char ligne[300];
-      int index = 0;
-      while ((c = fgetc(fic)) != '\n')
-      {
-        ligne[index] = c;
-        index++;
-      }
-      ligne[index] = '\0';
-      char *infosJoueur = strtok(ligne, ";");
-      strcpy(listeJoueurParam[indice].pseudo, infosJoueur);
-      infosJoueur = strtok(NULL, ";");
-      strcpy(listeJoueurParam[indice].biographie, infosJoueur);
-      infosJoueur = strtok(NULL, ";");
-      listeJoueurParam[indice].nbVictoires = atoi(infosJoueur);
-      infosJoueur = strtok(NULL, ";");
-      listeJoueurParam[indice].connecte = atoi(infosJoueur);
-
-      if ((c = fgetc(fic)) == EOF)
-      {
-        fileEnd = true;
-        break;
-      }
-      fseek(fic, -1L, SEEK_CUR);
-      indice++;
-    }
-    nbJoueurs = indice + 1;
-  }
-  fclose(fic);
-}
-
-void updateListeJoueur(int indiceJoueur, Joueur* j)
-{
-  FILE *fic;
-
-  // ouverture du fic de données CSV
-  fic = fopen("liste_joueurs.csv", "r+");
-  if (fic == NULL)
-  {
-    printf("Ouverture fic impossible !");
-  }
-  else
-  {
-    int ligneCourante = -1;
-    char ligne[1024];
-
-    while (fgets(ligne, sizeof(ligne), fic))
-    {
-      ligneCourante++;
-      if (ligneCourante == indiceJoueur)
-      {
-        // Remplace la nième ligne par les données
-        fseek(fic, -strlen(ligne), SEEK_CUR); // Mettre le curseur au début de la ligne
-        fprintf(fic, "%s;%s;%d;%d;", j->pseudo, j->biographie, j->nbVictoires, j->connecte);
-        break;
-      }
-    }
-  }
-  fclose(fic);
-}
-
 
 void app (int scomm){
   char c;
