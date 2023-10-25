@@ -212,10 +212,8 @@ void initPlateau(int* scoreJoueur1, int* scoreJoueur2, int* plateau)
     *scoreJoueur2 = 0;
     for (int i = 0; i < 12; i++)
     {
-        plateau[i] = 0;
+        plateau[i] = 4;
     }
-    plateau[5] = 1;
-    plateau[6] = 1;
 }
 
 int prendreGraine(int caseFin, int joueur, int * plateau)
@@ -334,15 +332,10 @@ bool finDeJeu(int* plateau, int joueur, int scoreJoueur1, int scoreJoueur2)
         }
     }
 
-    int nbGrainesTotal = 0;
-    for (int i = 0; i < 12; i++)
-    {
-        nbGrainesTotal += plateau[i];
+    if(scoreJoueur1>=25 || scoreJoueur2 >= 25){
+        fini = true;
     }
-    if (abs(scoreJoueur1 - scoreJoueur2) < nbGrainesTotal)
-    {
-        fini = false;
-    }
+    
 
     return fini;
 }
@@ -364,43 +357,3 @@ char finDePartie(int scoreJoueur1, int scoreJoueur2)
     }
 }
 
-/*int main(int argc, char **argv)
-{
-    initPlateau();
-
-    afficherPlateau();
-
-    int tourJoueur = 1;
-    int coup;
-    while (!finDeJeu(tourJoueur))
-    {
-    char *couleur = (tourJoueur == 1) ? "\x1b[31m" : "\x1b[34m";
-
-    do {
-        printf("%s\n\x1b[1m\x1b[4mJoueur %d\x1b[0m : Quel coup souhaitez-vous jouer ? (de 1 à 6)  \x1b[32m\x1b[1m", couleur, tourJoueur);
-
-        int verif = scanf("%d", &coup);
-        int valide = coupValide(coup, tourJoueur);
-        
-        if (verif != 1 || valide == 0) {
-            printf("\n\x1b[31mSaisie invalide. Veuillez saisir un nombre entre 1 et 6.\x1b[0m\n");
-            while (getchar() != '\n'); // Nettoie le tampon d'entrée
-        } else if (verif != 1 || valide == -3 ){
-            printf("\n\x1b[31mVous ne pouvez pas choisir une case vide.\x1b[0m\n");
-            while (getchar() != '\n'); 
-        } else if (verif != 1 || valide == -2){
-            printf("\n\x1b[31mVous devez nourrir le joueur adverse.\x1b[0m\n");
-            while (getchar() != '\n'); 
-        } else {
-            break; // Sort de la boucle si la saisie est valide
-void finDePartie();
-
-
-
-        jouerCoup(coup, tourJoueur);
-        printf("\n__________________________________________________________\n");
-        afficherPlateau();
-        tourJoueur = (tourJoueur == 1) ? 2 : 1;
-    }
-    finDePartie();
-}*/

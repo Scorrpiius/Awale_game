@@ -63,6 +63,42 @@ char *getHeure()
     return buffer;
 }
 
+/*
+void incrementerVictoires(Joueur * j){
+  FILE * fic = fopen("liste_joueurs.csv", "r+");
+  if(fic == NULL){
+    printf("Erreur dans le csv\n");
+    return;
+  }
+
+  char ligne[1024]; 
+  int positionLigne = -1;
+  while(fgets(ligne, sizeof(ligne), fic) != NULL){
+    char * pseudoDansLigne = strtok(ligne, ";");
+    positionLigne = ftell(fic);
+    printf("Pseudos %s / %s\n", pseudoDansLigne, j->pseudo);
+    if(pseudoDansLigne != NULL && strcmp(pseudoDansLigne, j->pseudo) == 0){
+      char * bioDansLigne = strtok(NULL, ";");
+      char * nbVictoiresLigne = strtok(NULL, ";");
+      char * connecteLigne = strtok(NULL, ";");
+
+      //incrémentation du nombre de victoires
+      int nbVictoires = 5;
+      //atoi(nbVictoiresLigne);
+      //nbVictoires++;
+
+      fseek(fic, -strlen(ligne), SEEK_CUR); // Mettre le curseur au début de la ligne
+      fprintf(fic, "%s;%s;%d;%s;\n", pseudoDansLigne, bioDansLigne, nbVictoires, connecteLigne);
+      break;
+    }
+    
+
+  }
+  fclose(fic);
+  printf("Nombre de victoires de %s incrémenté de 1\n", j->pseudo);
+
+}*/
+
 void initPartie(char* pseudo1, char* pseudo2){
   Partie p;
   strcpy(p.pseudoJoueur1, pseudo1);
@@ -204,13 +240,9 @@ void jouerPartie(Joueur * j, int *sockfd){
   //incrémenter le nombre de victoires du gagnant
   if(atoi(&resultat) == numJoueur){
     j->nbVictoires++;
-    //updateListeJoueur(j)
+    //incrementerVictoires(j);
   }
   strcpy(j->demandeurDeDefi,"\0");
-
-
-  
-
   
 }
 
@@ -294,8 +326,6 @@ void lireListeJoueur(Joueur *listeJoueurParam)
       infosJoueur = strtok(NULL, ";");
       listeJoueurParam[indice].connecte = atoi(infosJoueur);
 
-      //printf("%s , bio : %s \n", listeJoueurParam[indice].pseudo, listeJoueurParam[indice].biographie);
-
       if ((c = fgetc(fic)) == EOF)
       {
         fileEnd = true;
@@ -313,7 +343,6 @@ void updateListeJoueur(int indiceJoueur, Joueur* j)
 {
   FILE *fic;
 
-  //nbJoueurs = 0;
   // ouverture du fic de données CSV
   fic = fopen("liste_joueurs.csv", "r+");
   if (fic == NULL)
@@ -401,6 +430,9 @@ void app (int scomm){
       char c = '1';
       write(scomm, &c, 1);
       validitePseudo = nbJoueurs;
+      //listeJoueurs[validitePseudo] = *j;
+      lireListeJoueur(listeJoueurs);
+      j= &listeJoueurs[validitePseudo];
       joueurNonValide = false;
     }
     // Cas 2 : joueur existant et connecté -> on refuse la connexion
