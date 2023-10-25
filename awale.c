@@ -212,8 +212,10 @@ void initPlateau(int* scoreJoueur1, int* scoreJoueur2, int* plateau)
     *scoreJoueur2 = 0;
     for (int i = 0; i < 12; i++)
     {
-        plateau[i] = 4;
+        plateau[i] = 0;
     }
+    plateau[5] = 1;
+    plateau[6] = 1;
 }
 
 int prendreGraine(int caseFin, int joueur, int * plateau)
@@ -345,20 +347,20 @@ bool finDeJeu(int* plateau, int joueur, int scoreJoueur1, int scoreJoueur2)
     return fini;
 }
 
-void finDePartie(int scoreJoueur1, int scoreJoueur2)
+char finDePartie(int scoreJoueur1, int scoreJoueur2)
 {
 
     if (scoreJoueur1 > scoreJoueur2)
     {
-        printf("Félicitations au joueur 1 !!! Vous avez fumé le joueur 2 \n");
+        return '1';
     }
     else if (scoreJoueur2 > scoreJoueur1)
     {
-        printf("Félicitations au joueur 2 !!! Vous avez fumé le joueur 1 \n");
+        return '2';
     }
     else
     {
-        printf("Personne n'a fumé personne ! Quel dommage...\n");
+        return '3';
     }
 }
 

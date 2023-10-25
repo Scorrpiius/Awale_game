@@ -53,6 +53,23 @@ void jouerPartie(int * sockfd, char * buffer){
         //affichage du plateau après le tour de l'adversaire
         if (!premierTour) printf("\nC'est au tour de l'adversaire, patientez.\n");
         affichage(sockfd, buffer);
+        if(strstr(buffer, "FIN1") != NULL){
+          printf("Le joueur lanceur de défi a gagné ! Félicitations !\n");
+          finDePartie = true;
+          break;
+        }
+        else if(strstr(buffer, "FIN2") != NULL){
+          printf("Le joueur défié a gagné ! Félicitations !\n");
+          finDePartie = true;
+          break;
+        }
+        else if(strstr(buffer, "FIN3") != NULL){
+          printf("Personne n'a fumé l'autre... Dommage...\n");
+          finDePartie = true;
+          break;
+        }
+
+
         premierTour = false;
 
         //c'est à notre tour
@@ -88,8 +105,7 @@ void jouerPartie(int * sockfd, char * buffer){
                 }
         }while(valide != 1);
 
-  }    
-
+  } 
 }
 
 int main(int argc, char** argv )

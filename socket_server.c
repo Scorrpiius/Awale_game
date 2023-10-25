@@ -78,6 +78,9 @@ void initPartie(char* pseudo1, char* pseudo2){
   nbPartiesEnCours++;
   printf("%s Début d'une nouvelle partie entre \x1b[1m\"%s\"\x1b[0m et \x1b[1m\"%s\"\x1b[0m\n", getHeure(), p.pseudoJoueur1, p.pseudoJoueur2);
   //printf("DEBUG PARTIE : %s / %s\n", p.pseudoJoueur1, p.pseudoJoueur2);
+  for(int i = 0; i<nbPartiesEnCours; i++){
+    printf("Partie en cours entre %s et %s.\n", listePartiesEnCours[i].pseudoJoueur1, listePartiesEnCours[i].pseudoJoueur2);
+  }
 }
 
 char lectureMessageClient(int * sockfd){
@@ -97,6 +100,22 @@ char lectureMessageClient(int * sockfd){
       retour = c;
     }
     return retour;
+}
+
+void detruirePartie(char * pseudoJoueur1, char * pseudoJoueur2){
+  
+   for(int i = 0; i< nbPartiesEnCours; i++){
+
+      if(strcmp(listePartiesEnCours[i].pseudoJoueur1, pseudoJoueur1) == 0 && strcmp(listePartiesEnCours[i].pseudoJoueur2, pseudoJoueur2) == 0){
+        memmove(listePartiesEnCours + i, listePartiesEnCours + i +1, (nbPartiesEnCours -1)*sizeof(Partie));
+        nbPartiesEnCours--;
+        break;
+      }
+    }
+
+  for(int i = 0; i<nbPartiesEnCours; i++){
+    printf("Partie en cours entre %s et %s.\n", listePartiesEnCours[i].pseudoJoueur1, listePartiesEnCours[i].pseudoJoueur2);
+  }
 }
 
 void jouerPartie(Joueur * j, int *sockfd){
@@ -144,6 +163,10 @@ void jouerPartie(Joueur * j, int *sockfd){
     //afficherPlateau(p->plateau, sockfd, p->scoreJoueur1, p->scoreJoueur2, p->pseudoJoueur1, p->pseudoJoueur2);
     //joueur en attente
     while(p->tourJoueur != numJoueur){}
+    finDuJeu = finDeJeu(p->plateau, numJoueur, p->scoreJoueur1, p->scoreJoueur2);
+    if(finDuJeu){
+      break;
+    }
     //affichage du plateau après le tour de l'adversaire
     afficherPlateau(p->plateau, sockfd, p->scoreJoueur1, p->scoreJoueur2, p->pseudoJoueur1, p->pseudoJoueur2);
 
@@ -171,8 +194,23 @@ void jouerPartie(Joueur * j, int *sockfd){
 
 
   }
+  printf("La partie se termine...\n");
   //la partie est finie
-  finDePartie(p->scoreJoueur1, p->scoreJoueur2);
+  char sortieDeJeu[10] = "FIN";
+  char resultat = finDePartie(p->scoreJoueur1, p->scoreJoueur2);
+  strcat(sortieDeJeu, &resultat);
+  send(*sockfd, sortieDeJeu, strlen(sortieDeJeu), 0);
+
+  //incrémenter le nombre de victoires du gagnant
+  if(atoi(&resultat) == numJoueur){
+    j->nbVictoires++;
+    //updateListeJoueur(j)
+  }
+  strcpy(j->demandeurDeDefi,"\0");
+
+
+  
+
   
 }
 
@@ -344,21 +382,15 @@ void app (int scomm){
     // Cas 1 : joueur non existant -> on créée un nouveau joueur
     if (validitePseudo == -2)
     {
-      //char requestValidation[] = "Votre pseudo est :\0";
       
       j = (Joueur*)malloc(sizeof(Joueur));
 
       // creation d'un joueur
-      printf("bien rentré1\n");
       j->connecte = 1;
-      printf("bien rentré2\n");
       strcpy(j->biographie, "Votre biographie est vide. Allez la remplir ! ");
       j->occupe = false;
-      printf("bien rentré3\n");
       j->nbVictoires = 0;
       strcpy(j->pseudo, pseudoInput);
-      printf("bien rentré4\n");
-      //strcat(requestValidation, j->pseudo);
       
 
       printf("%s Ajout du joueur \x1b[1m\"%s\"\x1b[0m dans la base de données\n", getHeure(), j->pseudo);
@@ -420,10 +452,10 @@ void app (int scomm){
       if (reponse == '1')
       {
         lireListeJoueur(listeJoueurs);
-        char request[200] = "Liste des joueurs connectés :\n\n";
+        char request[200] = "Liste des joueurs disponibles :\n\n";
         bool joueurTrouve = false;
         for(int i = 0; i< nbJoueurs; i++){
-          if(listeJoueurs[i].connecte == 1 && strcmp(listeJoueurs[i].pseudo,j->pseudo) != 0)
+          if(listeJoueurs[i].connecte == 1 && strcmp(listeJoueurs[i].pseudo,j->pseudo) != 0 && listeJoueurs[i].occupe == false)
           {
             joueurTrouve = true;
             strcat(request, "\t");
@@ -432,7 +464,7 @@ void app (int scomm){
           }
         }
         if (!joueurTrouve) {
-          strcat(request, "\tIl n'y a aucun autre joueur connecté.\n");
+          strcat(request, "\tIl n'y a aucun autre joueur disponible.\n");
         }
 
         strcat(request, "\nEntrez le pseudo du joueur que vous souhaitez défier (0 pour revenir au menu) :");
@@ -466,23 +498,16 @@ void app (int scomm){
             joueurTrouveDansListe = true;
             if(strcmp(listeJoueurs[i].demandeurDeDefi, "\0")==0){
                 strcpy(listeJoueurs[i].demandeurDeDefi,j->pseudo);
-                /*char buffer[100] = "Votre demande a bien été envoyée \n\0";
-                send(scomm, buffer, strlen(buffer), 0);*/
                 adversaire = &listeJoueurs[i];
                 demandeEnvoye = '1';
                 write(scomm, &demandeEnvoye, 1);
             }else{
-              /*char buffer[100] = "Le joueur est déjà défié...\n\0";
-              send(scomm, buffer, strlen(buffer), 0);*/
               write(scomm, &demandeEnvoye, 1);
             }
             break;
           }
         }
         if (!joueurTrouveDansListe){
-          printf("rentré au mauvais endoit...\n");
-          /*char buffer[100] = "Le joueur n'existe pas";
-          send(scomm, buffer, strlen(buffer), 0);*/
           demandeEnvoye = '2';
           write(scomm, &demandeEnvoye, 1);
         }
@@ -491,17 +516,15 @@ void app (int scomm){
           while(strcmp(adversaire->demandeurDeDefi, "\0") != 0 && adversaire->occupe == false){ }
           if(strcmp(adversaire->demandeurDeDefi, "\0") == 0){
             char refus = '0';
-            /*char buffer[100] = " Le joueur a refusé votre demande...\n\0";
-            send(scomm, buffer, strlen(buffer), 0);*/
             write(scomm, &refus, 1);
           }else{
             char accepte = '1';
-            /*char buffer[100] = " Le joueur a accepté votre demande, la partie va commencer !\n\0";
-            send(scomm, buffer, strlen(buffer), 0);*/
             write(scomm, &accepte, 1);
             j->occupe = true; 
             initPartie(j->pseudo, adversaire->pseudo);
             jouerPartie(j, &scomm);
+            detruirePartie(j->pseudo, adversaire->pseudo);
+            j->occupe = false;
           }
         }
           
@@ -536,6 +559,7 @@ void app (int scomm){
       {
         j->occupe = true;
         jouerPartie(j, &scomm);
+        j->occupe = false;
       }else if (reponse == 'n')
       {
         strcpy(j->demandeurDeDefi,"\0");

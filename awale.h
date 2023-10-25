@@ -25,4 +25,4 @@ void initPlateau(int *score1, int *score2, int * plateau);
 int prendreGraine(int caseFin, int joueur, int * plateau);
 void jouerCoup(int * plateau, int coup, int joueur, int* score1, int* score2);
 bool finDeJeu(int*plateau, int joueur, int scoreJoueur1, int scoreJoueur2);
-void finDePartie(int scoreJoueur1, int scoreJoueur2);
+char finDePartie(int scoreJoueur1, int scoreJoueur2);
