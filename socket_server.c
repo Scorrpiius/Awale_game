@@ -186,6 +186,59 @@ void lireListeJoueur(Joueur *listeJoueurParam)
   fclose(fic);
 }
 
+void updateBiographie(Joueur *j)
+{
+    FILE *fic;
+
+    // ouverture du fic de données CSV
+    int indice = 0;
+    fic = fopen("liste_joueurs.csv", "r+");
+    if (fic == NULL)
+    {
+      printf("Ouverture fic impossible !");
+    }
+    else
+    {
+
+      // Créer un fichier temporaire pour stocker les données mises à jour
+      FILE *tempFile = fopen("temp.csv", "w");
+      if (tempFile == NULL) {
+          perror("Erreur lors de la création du fichier temporaire");
+          fclose(fic);
+      }
+
+      char ligne[1024];
+
+      // Lire le fichier ligne par ligne
+      while (fgets(ligne, sizeof(ligne), fic)) {
+          char *pseudo = strtok(ligne, ";");
+          char *biographie = strtok(NULL, ";");
+          char *nbVictoires = strtok(NULL, ";");
+          char *connecte = strtok(NULL, ";");
+
+
+          // Comparer le pseudo de la ligne actuelle avec le pseudo à mettre à jour
+          if (strcmp(pseudo, j->pseudo) == 0) {
+              // Si le pseudo correspond, mettre à jour la biographie
+              fprintf(tempFile, "%s;%s;%d;%d;\n", j->pseudo, j->biographie, j->nbVictoires, j->connecte);
+          } else {
+              // Si le pseudo ne correspond pas, conserver la ligne telle quelle
+              fprintf(tempFile, "%s;%s;%s;%s;\n", pseudo, biographie, nbVictoires, connecte);
+          }
+      }
+
+      // Fermer les fichiers
+      fclose(fic);
+      fclose(tempFile);
+
+      // Supprimer l'ancien fichier CSV et renommer le fichier temporaire
+      remove("liste_joueurs.csv");
+      rename("temp.csv", "liste_joueurs.csv");
+
+      printf("Mise à jour de la biographie effectuée avec succès.\n");
+    }
+}
+
 void updateListeJoueur(int indiceJoueur, Joueur *j)
 {
   FILE *fic;
@@ -505,7 +558,7 @@ void app(int scomm)
 
       // creation d'un joueur
       j->connecte = 1;
-      strcpy(j->biographie, "Votre biographie est vide. Allez la remplir ! ");
+      strcpy(j->biographie, "Votre biographie est vide.");
       j->occupe = false;
       j->nbVictoires = 0;
       strcpy(j->pseudo, pseudoInput);
@@ -700,7 +753,8 @@ void app(int scomm)
       }
       buffer[indice] = '\0';
       strcpy(j->biographie, buffer);
-      updateListeJoueur(validitePseudo, j);
+      strcpy(listeJoueurs[trouverIndiceCsv(j->pseudo)].biographie, j->biographie);
+      updateBiographie(j);
     }
     else if (reponse == '5')
     {
