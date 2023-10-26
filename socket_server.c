@@ -188,55 +188,59 @@ void lireListeJoueur(Joueur *listeJoueurParam)
 
 void updateBiographie(Joueur *j)
 {
-    FILE *fic;
+  FILE *fic;
 
-    // ouverture du fic de données CSV
-    int indice = 0;
-    fic = fopen("liste_joueurs.csv", "r+");
-    if (fic == NULL)
+  // ouverture du fic de données CSV
+  int indice = 0;
+  fic = fopen("liste_joueurs.csv", "r+");
+  if (fic == NULL)
+  {
+    printf("Ouverture fic impossible !");
+  }
+  else
+  {
+
+    // Créer un fichier temporaire pour stocker les données mises à jour
+    FILE *tempFile = fopen("temp.csv", "w");
+    if (tempFile == NULL)
     {
-      printf("Ouverture fic impossible !");
-    }
-    else
-    {
-
-      // Créer un fichier temporaire pour stocker les données mises à jour
-      FILE *tempFile = fopen("temp.csv", "w");
-      if (tempFile == NULL) {
-          perror("Erreur lors de la création du fichier temporaire");
-          fclose(fic);
-      }
-
-      char ligne[1024];
-
-      // Lire le fichier ligne par ligne
-      while (fgets(ligne, sizeof(ligne), fic)) {
-          char *pseudo = strtok(ligne, ";");
-          char *biographie = strtok(NULL, ";");
-          char *nbVictoires = strtok(NULL, ";");
-          char *connecte = strtok(NULL, ";");
-
-
-          // Comparer le pseudo de la ligne actuelle avec le pseudo à mettre à jour
-          if (strcmp(pseudo, j->pseudo) == 0) {
-              // Si le pseudo correspond, mettre à jour la biographie
-              fprintf(tempFile, "%s;%s;%d;%d;\n", j->pseudo, j->biographie, j->nbVictoires, j->connecte);
-          } else {
-              // Si le pseudo ne correspond pas, conserver la ligne telle quelle
-              fprintf(tempFile, "%s;%s;%s;%s;\n", pseudo, biographie, nbVictoires, connecte);
-          }
-      }
-
-      // Fermer les fichiers
+      perror("Erreur lors de la création du fichier temporaire");
       fclose(fic);
-      fclose(tempFile);
-
-      // Supprimer l'ancien fichier CSV et renommer le fichier temporaire
-      remove("liste_joueurs.csv");
-      rename("temp.csv", "liste_joueurs.csv");
-
-      printf("Mise à jour de la biographie effectuée avec succès.\n");
     }
+
+    char ligne[1024];
+
+    // Lire le fichier ligne par ligne
+    while (fgets(ligne, sizeof(ligne), fic))
+    {
+      char *pseudo = strtok(ligne, ";");
+      char *biographie = strtok(NULL, ";");
+      char *nbVictoires = strtok(NULL, ";");
+      char *connecte = strtok(NULL, ";");
+
+      // Comparer le pseudo de la ligne actuelle avec le pseudo à mettre à jour
+      if (strcmp(pseudo, j->pseudo) == 0)
+      {
+        // Si le pseudo correspond, mettre à jour la biographie
+        fprintf(tempFile, "%s;%s;%d;%d;\n", j->pseudo, j->biographie, j->nbVictoires, j->connecte);
+      }
+      else
+      {
+        // Si le pseudo ne correspond pas, conserver la ligne telle quelle
+        fprintf(tempFile, "%s;%s;%s;%s;\n", pseudo, biographie, nbVictoires, connecte);
+      }
+    }
+
+    // Fermer les fichiers
+    fclose(fic);
+    fclose(tempFile);
+
+    // Supprimer l'ancien fichier CSV et renommer le fichier temporaire
+    remove("liste_joueurs.csv");
+    rename("temp.csv", "liste_joueurs.csv");
+
+    printf("%s \x1b[1m\"%s\"\x1b[0m a mis à jour sa biographie.\n", getHeure(), j->pseudo);
+  }
 }
 
 void updateListeJoueur(int indiceJoueur, Joueur *j)
@@ -735,7 +739,7 @@ void app(int scomm)
     /* Modifier sa biographie */
     else if (reponse == '4')
     {
-      char request[100] = "Entrez votre nouvelle biographie : \n";
+      char request[100] = "\nEntrez votre nouvelle biographie :";
       send(scomm, request, strlen(request), 0);
 
       int indice = 0;
