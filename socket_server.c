@@ -37,6 +37,7 @@ typedef struct Partie
   int scoreJoueur2;
   int tourJoueur;
   pthread_mutex_t mutex;
+  bool finNormal;
 
 } Partie;
 
@@ -276,6 +277,7 @@ void updateListeJoueur(int indiceJoueur, Joueur *j)
 void initPartie(char *pseudo1, char *pseudo2)
 {
   Partie p;
+  p.finNormal = true;
   strcpy(p.pseudoJoueur1, pseudo1);
   strcpy(p.pseudoJoueur2, pseudo2);
   initPlateau(&p.scoreJoueur1, &p.scoreJoueur2, p.plateau);
@@ -305,7 +307,12 @@ char lectureMessageClient(int *sockfd)
   while (1)
   {
 
-    read(*sockfd, &c, 1);
+    int error = read(*sockfd, &c, 1);
+    if (error == 0)
+    {
+      printf("%s Joueur déconnecté anormalement\n", getHeure());
+      return 'E';
+    }
     // printf("%c", c);
     if (c == '\n')
     {
@@ -337,7 +344,7 @@ void detruirePartie(char *pseudoJoueur1, char *pseudoJoueur2)
   }*/
 }
 
-void jouerPartie(Joueur *j, int *sockfd)
+int jouerPartie(Joueur *j, int *sockfd)
 {
 
   bool partieTrouvee = false;
@@ -383,16 +390,16 @@ void jouerPartie(Joueur *j, int *sockfd)
 
   // printf("TOUR JOUEUR DEBUT %d\n", p->tourJoueur);
   bool finDuJeu = false;
-  while (!finDuJeu)
+  while (finDuJeu == false && p->finNormal == true)
   {
     // affichage du plateau une fois que l'on a joué
     // afficherPlateau(p->plateau, sockfd, p->scoreJoueur1, p->scoreJoueur2, p->pseudoJoueur1, p->pseudoJoueur2);
     // joueur en attente
-    while (p->tourJoueur != numJoueur)
+    while (p->tourJoueur != numJoueur && p->finNormal == true)
     {
     }
     finDuJeu = finDeJeu(p->plateau, numJoueur, p->scoreJoueur1, p->scoreJoueur2);
-    if (finDuJeu)
+    if (finDuJeu == true || p->finNormal == false)
     {
       break;
     }
@@ -408,6 +415,13 @@ void jouerPartie(Joueur *j, int *sockfd)
     do
     {
       char lectureCoup = lectureMessageClient(sockfd);
+      if (lectureCoup == 'E')
+      {
+        printf("%s Fin de la partie dû à la déconnexion anormale de l'un des joueurs\n", getHeure());
+        coup = '\0';
+        p->finNormal = false;
+        return 1;
+      }
       coup = atoi(&lectureCoup);
 
       // verification du coup
@@ -415,28 +429,40 @@ void jouerPartie(Joueur *j, int *sockfd)
       char valideTransmis[2];
       itoa(valide, valideTransmis, 10);
       send(*sockfd, valideTransmis, strlen(valideTransmis), 0);
-    } while (valide != 1);
+    } while (valide != 1 && p->finNormal == true);
 
     // le coup est joué, le jeu peut être terminé, sinon le tour est changé
     jouerCoup(p->plateau, coup, numJoueur, &p->scoreJoueur1, &p->scoreJoueur2);
     finDuJeu = finDeJeu(p->plateau, numJoueur, p->scoreJoueur1, p->scoreJoueur2);
     p->tourJoueur = (p->tourJoueur == 1) ? 2 : 1;
   }
-  // la partie est finie
-  char sortieDeJeu[10] = "FIN";
-  char resultat = finDePartie(p->scoreJoueur1, p->scoreJoueur2);
-  strcat(sortieDeJeu, &resultat);
-  send(*sockfd, sortieDeJeu, strlen(sortieDeJeu), 0);
 
-  // incrémenter le nombre de victoires du gagnant
-  if (atoi(&resultat) == numJoueur)
+  if (p->finNormal == true)
   {
-    j->nbVictoires++;
-    listeJoueurs[trouverIndiceCsv(j->pseudo)].nbVictoires++;
-    updateListeJoueur(trouverIndiceCsv(j->pseudo), &listeJoueurs[trouverIndiceCsv(j->pseudo)]);
-    // incrementerVictoires(j);
+    // la partie est finie
+    char sortieDeJeu[10] = "FIN";
+    char resultat = finDePartie(p->scoreJoueur1, p->scoreJoueur2);
+    strcat(sortieDeJeu, &resultat);
+    send(*sockfd, sortieDeJeu, strlen(sortieDeJeu), 0);
+
+    // incrémenter le nombre de victoires du gagnant
+    if (atoi(&resultat) == numJoueur)
+    {
+      j->nbVictoires++;
+      listeJoueurs[trouverIndiceCsv(j->pseudo)].nbVictoires++;
+      updateListeJoueur(trouverIndiceCsv(j->pseudo), &listeJoueurs[trouverIndiceCsv(j->pseudo)]);
+    }
   }
+  else
+  {
+    // la partie est finie
+
+    char sortieDeJeu[10] = "FINDEC";
+    send(*sockfd, sortieDeJeu, strlen(sortieDeJeu), 0);
+  }
+
   strcpy(j->demandeurDeDefi, "\0");
+  return 0;
 }
 
 void voirProfil(Joueur *j, int sockfd)
@@ -719,7 +745,13 @@ void app(int scomm)
           write(scomm, &accepte, 1);
           j->occupe = true;
           initPartie(j->pseudo, adversaire->pseudo);
-          jouerPartie(j, &scomm);
+          int error = jouerPartie(j, &scomm);
+          if (error == 1)
+          {
+            joueurSurMenu = false;
+            j->connecte = 0;
+            updateListeJoueur(validitePseudo, j);
+          }
           detruirePartie(j->pseudo, adversaire->pseudo);
           j->occupe = false;
         }
@@ -739,7 +771,7 @@ void app(int scomm)
     /* Modifier sa biographie */
     else if (reponse == '4')
     {
-      char request[100] = "\nEntrez votre nouvelle biographie :";
+      char request[100] = "\nEntrez votre nouvelle biographie : \n";
       send(scomm, request, strlen(request), 0);
 
       int indice = 0;
@@ -765,7 +797,7 @@ void app(int scomm)
       continue;
     }
     /* Déconnexion */
-    else if (reponse == '6')
+    else if (reponse == '6' || reponse == 'E')
     {
       joueurSurMenu = false;
       j->connecte = 0;
@@ -776,7 +808,13 @@ void app(int scomm)
     {
       printf("%s \x1b[1m\"%s\"\x1b[0m a accepté la demande de défi de \x1b[1m\"%s\"\x1b[0m\n", getHeure(), j->pseudo, j->demandeurDeDefi);
       j->occupe = true;
-      jouerPartie(j, &scomm);
+      int error = jouerPartie(j, &scomm);
+      if (error == 1)
+      {
+        joueurSurMenu = false;
+        j->connecte = 0;
+        updateListeJoueur(validitePseudo, j);
+      }
       j->occupe = false;
     }
     /* Le joueur a été défié et refuse */

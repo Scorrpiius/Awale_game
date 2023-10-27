@@ -78,7 +78,12 @@ void jouerPartie(int *sockfd, char *buffer)
     }
     else if (strstr(buffer, "FIN3") != NULL)
     {
-      printf("Personne n'a fumé l'autre... Dommage...\n");
+      printf("Personne n'a gagné, égalité.\n");
+      finDePartie = true;
+      break;
+    }else if (strstr(buffer, "FINDEC") != NULL)
+    {
+      printf("Votre adversaire a lâchement fui devant votre superiorité...\n");
       finDePartie = true;
       break;
     }
