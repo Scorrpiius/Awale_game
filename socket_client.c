@@ -68,6 +68,7 @@ void jouerPartie(int *sockfd, char *buffer) {
     //affichageMessageServeur(sockfd, buffer);
 
     /*Fin de partie, interruption de la boucle et affichage du gagnant*/
+    /*(on vérifie aussi avec la chaine "IN1" car parfois le 'F' de FIN1 est consommé)*/
     if (strstr(buffer, "FIN1") != NULL || strstr(buffer, "IN1") != NULL ) {
 
       printf("Le joueur lanceur de défi a gagné ! Félicitations !\n");
