@@ -363,7 +363,6 @@ int jouerPartie(Joueur *j, int *sockfd) {
     char sortieDeJeu[] = "FIN";
     char resultat = finDePartie(p->scoreJoueur1, p->scoreJoueur2);
     strcat(sortieDeJeu, &resultat);
-    printf("TEST 1%s", sortieDeJeu);
     send(*sockfd, sortieDeJeu, strlen(sortieDeJeu), 0);
 
     /* Incrémenter le nombre de victoires du gagnan */
@@ -376,7 +375,6 @@ int jouerPartie(Joueur *j, int *sockfd) {
     /* La partie s'est finie anormalement */
     char sortieDeJeu[] = "FINDEC";
     send(*sockfd, sortieDeJeu, strlen(sortieDeJeu), 0);
-    printf("TEST 2%s", sortieDeJeu);
 
   }
 

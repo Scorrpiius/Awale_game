@@ -198,11 +198,9 @@ void afficherPlateau(int *plateau, int *sock, int scoreJoueur1, int scoreJoueur2
 
 void initPlateau(int *scoreJoueur1, int *scoreJoueur2, int *plateau) {
 
-    *scoreJoueur1 = 24;
+    *scoreJoueur1 = 0;
     *scoreJoueur2 = 0;
-    for (int i = 0; i < 12; i++) { plateau[i] = 0; }
-    plateau[5] = 1;
-    plateau[6] = 1;
+    for (int i = 0; i < 12; i++) { plateau[i] = 4; }
 
 }
 
