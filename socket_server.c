@@ -325,7 +325,7 @@ int jouerPartie(Joueur *j, int *sockfd) {
     /* Joueur en attente */
     while (p->tourJoueur != numJoueur && p->finNormal == true){}
     finDuJeu = finDeJeu(p->plateau, numJoueur, p->scoreJoueur1, p->scoreJoueur2);
-    if (finDuJeu == true || p->finNormal == false){strcpy(j->demandeurDeDefi, "\0");break;}
+    if (finDuJeu == true || p->finNormal == false){break;}
 
     /* Affichage du plateau après le tour de l'adversaire */
     afficherPlateau(p->plateau, sockfd, p->scoreJoueur1, p->scoreJoueur2, p->pseudoJoueur1, p->pseudoJoueur2);
@@ -354,7 +354,6 @@ int jouerPartie(Joueur *j, int *sockfd) {
     /* Le coup est joué, le jeu peut être terminé, sinon le tour est changé */
     jouerCoup(p->plateau, coup, numJoueur, &p->scoreJoueur1, &p->scoreJoueur2);
     finDuJeu = finDeJeu(p->plateau, numJoueur, p->scoreJoueur1, p->scoreJoueur2);
-    //if (finDuJeu == true || p->finNormal == false){strcpy(j->demandeurDeDefi, "\0");break;}
     p->tourJoueur = (p->tourJoueur == 1) ? 2 : 1;
   }
 
@@ -378,7 +377,7 @@ int jouerPartie(Joueur *j, int *sockfd) {
 
   }
 
-  //strcpy(j->demandeurDeDefi, "\0");
+  strcpy(j->demandeurDeDefi, "\0");
   return 0;
 }
 
