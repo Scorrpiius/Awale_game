@@ -72,98 +72,67 @@ char *itoa(int value, char *buffer, int base)
     return reverse(buffer, 0, i - 1);
 }
 
-int coupValide(int *plateau, int coup, int joueur)
-{
+int coupValide(int *plateau, int coup, int joueur) {
 
-    if (coup < 1 || coup > 6)
-    {
-        return MAUVAISE_SAISIE;
-    }
+    if (coup < 1 || coup > 6) { return MAUVAISE_SAISIE; }
 
     int nbrGraines = (joueur == 1) ? plateau[coup - 1] : plateau[12 - coup];
-    if (nbrGraines == 0)
-    {
-        return CASE_VIDE;
-    }
+    if (nbrGraines == 0) { return CASE_VIDE; }
 
-    if (joueur == 1)
-    {
+    if (joueur == 1){
         int vraiCoup = coup - 1;
 
-        for (int i = 11; i >= 6; i--)
-        { // On vérifie si le plateau adverse est vide
-            if (plateau[i] != 0)
-            {
-                return COUP_VALIDE;
-            }
+        for (int i = 11; i >= 6; i--) { /* On vérifie si le plateau adverse est vide */
+            if (plateau[i] != 0) {return COUP_VALIDE;}
         }
 
-        if (plateau[vraiCoup] + vraiCoup >= 6)
-        { // Le plateau adverse est vide on vérifie si le coup du joueur nourrit le plateau du joueur adverse
+        if (plateau[vraiCoup] + vraiCoup >= 6){ /* Le plateau adverse est vide on vérifie si le coup du joueur nourrit le plateau du joueur adverse */
             return COUP_VALIDE;
-        }
-        else
-        {
+        } else {
             /* Vérifier si il existe un coup tel qu'il nourrit le joueur adverse
                 si oui alors il faut le jouer
                 si non la partie est finie
                 */
-            for (int i = 0; i < 6; i++)
-            {
-                if (plateau[i] + i >= 6)
-                {
-                    return COUP_INVALIDE;
-                }
+            for (int i = 0; i < 6; i++) {
+                if (plateau[i] + i >= 6) {return COUP_INVALIDE;}
             }
         }
         return PARTIE_FINIE;
-    }
-    else if (joueur == 2)
-    { // Même chose pour le joueur 2
+
+    } else if (joueur == 2) { /* Même chose pour le joueur 2 */
         int vraiCoup = 12 - coup;
 
-        for (int i = 0; i < 6; i++)
-        {
-            if (plateau[i] != 0)
-            {
-                return COUP_VALIDE;
-            }
+        for (int i = 0; i < 6; i++) {
+            if (plateau[i] != 0) { return COUP_VALIDE; }
         }
 
-        if (plateau[vraiCoup] - coup >= 0)
-        {
+        if (plateau[vraiCoup] - coup >= 0) {
             return COUP_VALIDE;
-        }
-        else
-        {
-            for (int i = 11; i >= 6; i--)
-            {
-                if (plateau[i] + i >= 6)
-                {
-                    return COUP_INVALIDE;
-                }
+        } else {
+            for (int i = 11; i >= 6; i--) {
+                if (plateau[i] + i >= 6) { return COUP_INVALIDE;}
             }
         }
         return PARTIE_FINIE;
     }
 }
 
-void afficherPlateau(int *plateau, int *sock, int scoreJoueur1, int scoreJoueur2, char *pseudoJoueur1, char *pseudoJoueur2)
-{
-    // printf("Je suis entré dans afficahge palrazojrhireoae\n");
+void afficherPlateau(int *plateau, int *sock, int scoreJoueur1, int scoreJoueur2, char *pseudoJoueur1, char *pseudoJoueur2) {
+
     char affichagePlateau[4096] = "\n\n\t\t\t\x1b[90m  1   2   3   4   5   6\x1b[0m\n\t\t\t╔═══╦═══╦═══╦═══╦═══╦═══╗\n\033[31m";
     strcat(affichagePlateau, pseudoJoueur1);
 
-    // l'affichage est différent si le pseudo d'un joueur est trop petit
-    if ((int)strlen(pseudoJoueur1) <= 4)
-    {
+    /* L'affichage est différent si le pseudo d'un joueur est trop petit */
+    if ((int)strlen(pseudoJoueur1) <= 4) {
+
         strcat(affichagePlateau, "\x1b[0m\t: \t\x1b[32m\x1b[1m");
-    }
-    else
-    {
+
+    } else {
+
         strcat(affichagePlateau, "\x1b[0m : \t\x1b[32m\x1b[1m");
+
     }
-    // printf("TEST N°1 %s", affichagePlateau);
+
     char scoreJ1[3];
     char scoreJ2[3];
     char casePlateau[2];
@@ -171,183 +140,172 @@ void afficherPlateau(int *plateau, int *sock, int scoreJoueur1, int scoreJoueur2
     itoa(scoreJoueur1, scoreJ1, 10);
     itoa(scoreJoueur2, scoreJ2, 10);
     strcat(affichagePlateau, scoreJ1);
-    // printf("TEST N°2 %s", affichagePlateau);
-
     strcat(affichagePlateau, "\x1b[0m pts\t║ ");
-    // printf("TEST N°3 %s", affichagePlateau);
 
-    /*
-     printf("\n");
+    for (int i = 0; i < 6; i++){
 
-     printf("\n\t\t\t\x1b[90m  1   2   3   4   5   6\x1b[0m\n");
-     printf("\t\t\t╔═══╦═══╦═══╦═══╦═══╦═══╗\n");
-
-     printf("\033[31mJoueur 1\x1b[0m : \x1b[32m\x1b[1m%d\x1b[0m pts\t║ ", scoreJoueur1);
-     */
-
-    for (int i = 0; i < 6; i++)
-    {
         itoa(plateau[i], casePlateau, 10);
-        if (plateau[i] >= 10)
-        {
+        if (plateau[i] >= 10) {
 
             strcat(affichagePlateau, casePlateau);
             strcat(affichagePlateau, "║ ");
-            // printf("%d║ ", plateau[i]);
-        }
-        else
-        {
+        } else {
+
             strcat(affichagePlateau, casePlateau);
             strcat(affichagePlateau, " ║ ");
-            // printf("%d ║ ", plateau[i]);
+
         }
     }
-    // printf("TEST N°4 %s", affichagePlateau);
 
-    // l'affichage est différent si le pseudo d'un joueur est trop petit
+    /* L'affichage est différent si le pseudo d'un joueur est trop petit */
     strcat(affichagePlateau, "\n\t\t\t╠═══╬═══╬═══╬═══╬═══╬═══╣\n\033[34m");
     strcat(affichagePlateau, pseudoJoueur2);
-    if ((int)strlen(pseudoJoueur1) <= 4)
-    {
+    
+    if ((int)strlen(pseudoJoueur1) <= 4) {
+
         strcat(affichagePlateau, "\x1b[0m\t: \t\x1b[32m\x1b[1m");
-    }
-    else
-    {
+
+    } else {
+
         strcat(affichagePlateau, "\x1b[0m : \t\x1b[32m\x1b[1m");
+
     }
 
     strcat(affichagePlateau, scoreJ2);
     strcat(affichagePlateau, "\x1b[0m pts\t║ ");
 
-    // printf("\n\t\t\t╠═══╬═══╬═══╬═══╬═══╬═══╣\n");
+    for (int i = 11; i >= 6; i--) {
 
-    // printf("\033[34mJoueur 2\x1b[0m : \x1b[32m\x1b[1m%d\x1b[0m pts\t║ ", scoreJoueur2);
-    for (int i = 11; i >= 6; i--)
-    {
         itoa(plateau[i], casePlateau, 10);
-        if (plateau[i] >= 10)
-        {
+
+        if (plateau[i] >= 10) {
+
             strcat(affichagePlateau, casePlateau);
             strcat(affichagePlateau, "║ ");
-            // printf("%d║ ", plateau[i]);
-        }
-        else
-        {
+
+        } else {
+
             strcat(affichagePlateau, casePlateau);
             strcat(affichagePlateau, " ║ ");
-            // printf("%d ║ ", plateau[i]);
+
         }
     }
 
     strcat(affichagePlateau, "\n\t\t\t╚═══╩═══╩═══╩═══╩═══╩═══╝\n");
-    // printf("\n");
-    // printf("\t\t\t╚═══╩═══╩═══╩═══╩═══╩═══╝\n");
-    // printf("%s", affichagePlateau);
     send(*sock, affichagePlateau, strlen(affichagePlateau), 0);
-    // send(*sock, affichagePlateau, strlen(affichagePlateau), 0);
+
 }
 
-void initPlateau(int *scoreJoueur1, int *scoreJoueur2, int *plateau)
-{
-    *scoreJoueur1 = 0;
+void initPlateau(int *scoreJoueur1, int *scoreJoueur2, int *plateau) {
+
+    *scoreJoueur1 = 24;
     *scoreJoueur2 = 0;
-    for (int i = 0; i < 12; i++)
-    {
-        plateau[i] = 4;
-    }
+    for (int i = 0; i < 12; i++) { plateau[i] = 0; }
+    plateau[5] = 1;
+    plateau[6] = 1;
+
 }
 
-int prendreGraine(int caseFin, int joueur, int *plateau)
-{
+int prendreGraine(int caseFin, int joueur, int *plateau) {
+
     int totalGraines = 0;
     bool verification = false;
-    while (!verification)
-    {
-        if (joueur == 1)
-        {
-            if (caseFin < 6)
-            {
+    while (!verification) {
+
+        if (joueur == 1) {
+
+            if (caseFin < 6) {
+
                 verification = true;
                 break;
+
             }
-            if (plateau[caseFin] == 2 || plateau[caseFin] == 3)
-            {
+
+            if (plateau[caseFin] == 2 || plateau[caseFin] == 3) {
+
                 totalGraines += plateau[caseFin];
                 plateau[caseFin] = 0;
                 (caseFin--);
                 caseFin = caseFin % 12;
-            }
-            else
-            {
+
+            } else {
+
                 verification = true;
                 break;
+
             }
         }
-        if (joueur == 2)
-        {
-            if (caseFin > 5)
-            {
+
+        if (joueur == 2) {
+
+            if (caseFin > 5) {
+
                 verification = true;
                 break;
+
             }
-            if (plateau[caseFin] == 2 || plateau[caseFin] == 3)
-            {
+
+            if (plateau[caseFin] == 2 || plateau[caseFin] == 3) {
+
                 totalGraines += plateau[caseFin];
                 plateau[caseFin] = 0;
                 (caseFin--);
                 caseFin = caseFin % 12;
-            }
-            else
-            {
+
+            } else {
+
                 verification = true;
                 break;
+                
             }
         }
     }
     return totalGraines;
 }
 
-void jouerCoup(int *plateau, int coup, int joueur, int *scoreJoueur1, int *scoreJoueur2)
-{
+void jouerCoup(int *plateau, int coup, int joueur, int *scoreJoueur1, int *scoreJoueur2) {
 
     int nbGraines;
-    if (joueur == 1)
-    {
+    if (joueur == 1) {
+
         coup = coup - 1;
         int caseInit = coup;
         nbGraines = plateau[coup];
         plateau[coup] = 0;
-        for (int i = coup + 1; i <= coup + nbGraines; i++)
-        {
-            if (!(i % 12 == caseInit))
-            {
+
+        for (int i = coup + 1; i <= coup + nbGraines; i++) {
+
+            if (!(i % 12 == caseInit)) {
+                
                 plateau[i % 12]++;
-            }
-            else
-            {
+
+            } else {
+
                 coup++;
+
             }
         }
 
         int caseFin = (nbGraines + coup) % 12;
         *scoreJoueur1 += prendreGraine(caseFin, joueur, plateau);
-    }
-    else
-    {
+
+    } else {
+
         coup = 12 - coup;
         int caseInit = coup;
         nbGraines = plateau[coup];
         plateau[coup] = 0;
 
-        for (int i = coup + 1; i <= coup + nbGraines; i++)
-        {
-            if (!(i % 12 == caseInit))
-            {
+        for (int i = coup + 1; i <= coup + nbGraines; i++) {
+
+            if (!(i % 12 == caseInit)) {
+
                 plateau[i % 12]++;
-            }
-            else
-            {
+
+            } else {
+
                 coup++;
+                
             }
         }
 
@@ -356,33 +314,26 @@ void jouerCoup(int *plateau, int coup, int joueur, int *scoreJoueur1, int *score
     }
 }
 
-bool finDeJeu(int *plateau, int joueur, int scoreJoueur1, int scoreJoueur2)
-{
-
-    // vrai condition de fin
+bool finDeJeu(int *plateau, int joueur, int scoreJoueur1, int scoreJoueur2) {
 
     bool fini = false;
-    if (scoreJoueur1 >= 25 || scoreJoueur2 >= 25)
-    {
-        fini = true;
-    }
-
+    if (scoreJoueur1 >= 25 || scoreJoueur2 >= 25) { fini = true; }
     return fini;
 }
 
-char finDePartie(int scoreJoueur1, int scoreJoueur2)
-{
+char finDePartie(int scoreJoueur1, int scoreJoueur2) {
 
-    if (scoreJoueur1 > scoreJoueur2)
-    {
+    if (scoreJoueur1 > scoreJoueur2) {
+
         return '1';
-    }
-    else if (scoreJoueur2 > scoreJoueur1)
-    {
+
+    } else if (scoreJoueur2 > scoreJoueur1) {
+
         return '2';
-    }
-    else
-    {
+
+    } else {
+
         return '3';
+
     }
 }
